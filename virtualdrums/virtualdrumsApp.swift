@@ -13,5 +13,8 @@ struct virtualdrumsApp: App {
         WindowGroup {
             ContentView()
         }
+        ImmersiveSpace(id: "drum-volume") {
+            DrumVolumeView()
+        }
     }
 }
