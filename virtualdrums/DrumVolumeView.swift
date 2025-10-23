@@ -1,3 +1,10 @@
+//
+//  DrumVolumeView.swift
+//  virtualdrums
+//
+//  Created by Passion on 23.10.25.
+//
+
 import SwiftUI
 import RealityKit
 import RealityKitContent
@@ -8,8 +15,10 @@ class MIDIManager {
     private var client = MIDIClientRef()
     private var outPort = MIDIPortRef()
     private var destination: MIDIEndpointRef? = nil
+    private var log: MIDIMessageLog?
     
-    init() {
+    init(log: MIDIMessageLog? = nil) {
+        self.log = log
         MIDIClientCreate("VirtualDrumsMIDIClient" as CFString, nil, nil, &client)
         MIDIOutputPortCreate(client, "VirtualDrumsOutPort" as CFString, &outPort)
         // Use the first available destination
@@ -22,8 +31,10 @@ class MIDIManager {
     }
     
     func sendNoteOn(note: UInt8 = 60, velocity: UInt8 = 100, channel: UInt8 = 9) {
+        let msg = "Note On - note: \(note), velocity: \(velocity), channel: \(channel)"
+        log?.log(msg)
         #if targetEnvironment(simulator)
-        print("[SIMULATOR] MIDI Note On - note: \(note), velocity: \(velocity), channel: \(channel)")
+        print("[SIMULATOR] \(msg)")
         #else
         guard let destination = destination else { return }
         var packet = MIDIPacket()
@@ -43,9 +54,9 @@ class MIDIManager {
 }
 
 struct DrumVolumeView: View {
+    var midiManager: MIDIManager
     @State private var message: String = "Touch the drum!"
     @State private var audioPlayer: AVAudioPlayer? = nil
-    private let midiManager = MIDIManager()
     
     var body: some View {
         ZStack {
@@ -66,7 +77,7 @@ struct DrumVolumeView: View {
                     .onEnded {
                         message = "Drum tapped!"
                         playDrumSound()
-                        midiManager.sendNoteOn(note: 36, velocity: 120, channel: 0) // MIDI note 36 = Bass Drum
+                        midiManager.sendNoteOn(note: 36, velocity: 120, channel: 0)
                         print("Drum entity tapped!")
                     }
             )
@@ -86,7 +97,6 @@ struct DrumVolumeView: View {
     }
     
     private func prepareDrumSound() {
-        //  test sound source https://cdn.pixabay.com/download/audio/2025/10/16/audio_3098f90d3e.mp3?filename=808-bass-drum-421219.mp3
         if let url = Bundle.main.url(forResource: "808-bass-drum-421219", withExtension: "mp3") {
             do {
                 audioPlayer = try AVAudioPlayer(contentsOf: url)
@@ -105,6 +115,4 @@ struct DrumVolumeView: View {
     }
 }
 
-#Preview {
-    DrumVolumeView()
-}
+// End of DrumVolumeView and MIDIManager definitions.

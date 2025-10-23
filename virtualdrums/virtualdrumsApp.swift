@@ -9,12 +9,16 @@ import SwiftUI
 
 @main
 struct virtualdrumsApp: App {
+    @StateObject private var midiLog = MIDIMessageLog()
     var body: some Scene {
+        let midiManager = MIDIManager(log: midiLog)
         WindowGroup {
-            ContentView()
+            ContentView(midiManager: midiManager)
+                .environmentObject(midiLog)
         }
         ImmersiveSpace(id: "drum-volume") {
-            DrumVolumeView()
+            DrumVolumeView(midiManager: midiManager)
+                .environmentObject(midiLog)
         }
     }
 }

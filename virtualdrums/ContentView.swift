@@ -11,6 +11,9 @@ import RealityKitContent
 
 struct ContentView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @EnvironmentObject var midiLog: MIDIMessageLog
+    @State private var showDebugger = false
+    var midiManager: MIDIManager
 
     var body: some View {
         VStack {
@@ -20,16 +23,19 @@ struct ContentView: View {
                 }
             }
             .padding(.bottom, 20)
-
-            //Model3D(named: "Scene", bundle: realityKitContentBundle)
-            //.padding(.bottom, 50)
-
+            Button("Open MIDI Debugger") {
+                showDebugger = true
+            }
+            .padding(.bottom, 20)
             Text("Play the drum and verify a sound plays after touching it.")
         }
         .padding()
+        .sheet(isPresented: $showDebugger) {
+            MIDIDebuggerView(log: midiLog)
+        }
     }
 }
 
 #Preview(windowStyle: .automatic) {
-    ContentView()
+    ContentView(midiManager: MIDIManager(log: MIDIMessageLog()))
 }
