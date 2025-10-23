@@ -14,6 +14,7 @@ import CoreMIDI
 class MIDIManager {
     private var client = MIDIClientRef()
     private var outPort = MIDIPortRef()
+    private var inPort = MIDIPortRef()
     private var destination: MIDIEndpointRef? = nil
     private var log: MIDIMessageLog?
     
@@ -21,6 +22,7 @@ class MIDIManager {
         self.log = log
         MIDIClientCreate("VirtualDrumsMIDIClient" as CFString, nil, nil, &client)
         MIDIOutputPortCreate(client, "VirtualDrumsOutPort" as CFString, &outPort)
+        MIDIInputPortCreate(client, "VirtualDrumsInPort" as CFString, midiInputCallback, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()), &inPort)
         // Use the first available destination
         let destCount = MIDIGetNumberOfDestinations()
         if destCount > 0 {
@@ -28,11 +30,17 @@ class MIDIManager {
         } else {
             print("No MIDI destinations available.")
         }
+        // Connect to all sources
+        let sourceCount = MIDIGetNumberOfSources()
+        for i in 0..<sourceCount {
+            let src = MIDIGetSource(i)
+            MIDIPortConnectSource(inPort, src, nil)
+        }
     }
     
     func sendNoteOn(note: UInt8 = 60, velocity: UInt8 = 100, channel: UInt8 = 9) {
         let msg = "Note On - note: \(note), velocity: \(velocity), channel: \(channel)"
-        log?.log(msg)
+        log?.appendFromMIDIStack("[OUT] " + msg)
         #if targetEnvironment(simulator)
         print("[SIMULATOR] \(msg)")
         #else
@@ -50,6 +58,24 @@ class MIDIManager {
             MIDISend(outPort, destination, midiPtr)
         }
         #endif
+    }
+
+    // MIDI input callback
+    private let midiInputCallback: MIDIReadProc = { (pktList, refCon, srcConnRefCon) in
+        let manager = Unmanaged<MIDIManager>.fromOpaque(refCon!).takeUnretainedValue()
+        let packetList = pktList.pointee
+        // Correctly get a mutable pointer to the first packet
+        var packet = UnsafeMutableRawPointer(mutating: pktList).assumingMemoryBound(to: MIDIPacket.self)
+        for _ in 0..<packetList.numPackets {
+            let length = Int(packet.pointee.length)
+            let data = withUnsafeBytes(of: packet.pointee.data) { rawPtr in
+                Array(rawPtr.prefix(length))
+            }
+            let hex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+            let msg = "[IN] MIDI Packet: [\(hex)]"
+            manager.log?.appendFromMIDIStack(msg)
+            packet = MIDIPacketNext(packet)
+        }
     }
 }
 

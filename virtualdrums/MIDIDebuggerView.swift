@@ -1,20 +1,29 @@
 import SwiftUI
 import Combine
 
+// MIDIMessageLog now only provides an interface for appending messages from CoreMIDI callbacks.
 class MIDIMessageLog: ObservableObject {
     struct MIDIMessage: Identifiable {
         let id = UUID()
         let timestamp: Date
         let description: String
     }
-    @Published var messages: [MIDIMessage] = []
+    @Published private(set) var messages: [MIDIMessage] = []
     
-    func log(_ description: String) {
+    // Only called from CoreMIDI input callback
+    func appendFromMIDIStack(_ description: String) {
         DispatchQueue.main.async {
             self.messages.insert(MIDIMessage(timestamp: Date(), description: description), at: 0)
             if self.messages.count > 100 {
                 self.messages.removeLast()
             }
+        }
+    }
+    
+    // Safe clear method for SwiftUI toolbar
+    func clear() {
+        DispatchQueue.main.async {
+            self.messages.removeAll()
         }
     }
 }
@@ -39,7 +48,7 @@ struct MIDIDebuggerView: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Clear") { log.messages.removeAll() }
+                    Button("Clear") { log.clear() }
                 }
             }
         }
