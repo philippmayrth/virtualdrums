@@ -59,50 +59,102 @@ struct DrumVolumeView: View {
     private func setupDrumKit(content: RealityViewContent) async {
         let kitAnchor = AnchorEntity(world: [0, 1.0, -2])
         
-        for piece in drumController.drumKit.pieces {
-            do {
-                // Load the 3D model for this drum piece
-                let entity = try await Entity(named: piece.modelName, in: .main)
-                
-                // Set position relative to kit center
-                entity.position = piece.position
-                
-                // Add collision and input components
-                entity.generateCollisionShapes(recursive: true)
+        do {
+            // Load the functional drum kit with named parts (ugly but works!)
+            let drumKitEntity = try await Entity(named: "DrumKit_Named", in: .main)
+            
+            // Scale and position the entire kit
+            drumKitEntity.scale = [0.01, 0.01, 0.01]
+            drumKitEntity.position = [0, 0, 0]
+            
+            print("📦 Loaded DrumKit_Named model")
+            
+            // Find and configure drum parts with proper names
+            configureDrumParts(entity: drumKitEntity)
+            
+            // Add collision to entire kit
+            drumKitEntity.generateCollisionShapes(recursive: true)
+            
+            // Add to anchor
+            kitAnchor.addChild(drumKitEntity)
+            content.add(kitAnchor)
+            
+            print("🥁 Drum kit setup complete!")
+            
+        } catch {
+            print("❌ Failed to load DrumKit_Named model: \(error)")
+        }
+    }
+    
+    /// Configure drum parts by finding entities with drum names and adding input targets
+    private func configureDrumParts(entity: Entity) {
+        // Map of entity name patterns to drum IDs for DrumKit_Named
+        let drumMapping: [String: String] = [
+            "Snare_Skin": "snare",
+            "Bass_Outer_Skin": "kick",
+            "TomTom_Skin": "tom1",
+            "Cymbol": "crash",  // Cymbal is misspelled in the model
+        ]
+        
+        // Recursively search for drum parts
+        searchAndConfigureEntities(entity, drumMapping: drumMapping, depth: 0)
+    }
+    
+    /// Recursively search entities and configure drum parts
+    private func searchAndConfigureEntities(_ entity: Entity, drumMapping: [String: String], depth: Int) {
+        let entityName = entity.name
+        
+        // Debug: Log ALL entities at reasonable depth
+        if depth < 8 {
+            let indent = String(repeating: "  ", count: depth)
+            print("\(indent)🔍 Entity[\(depth)]: '\(entityName)'")
+        }
+        
+        // Check if this entity matches any drum pattern
+        for (pattern, drumId) in drumMapping {
+            if entityName.contains(pattern) {
+                // Found a drum part! Make it tappable
                 entity.components.set(InputTargetComponent())
                 
-                // Name the entity so we can identify it on tap
-                entity.name = piece.id
-                
-                // Debug: Log entity hierarchy
-                print("📦 Loaded entity '\(entity.name)' with \(entity.children.count) children:")
-                for child in entity.children {
-                    print("   └─ Child: '\(child.name)'")
+                // Store the drum ID in the entity name or use a custom property
+                // For now, we'll append it to help with detection
+                if !entity.name.contains("_DRUM_") {
+                    entity.name = "\(entity.name)_DRUM_\(drumId)"
+                    print("✅ Configured: \(pattern) → \(drumId) (\(entityName))")
                 }
-                
-                // Add to the kit
-                kitAnchor.addChild(entity)
-                
-                print("✅ Loaded drum: \(piece.name) at position \(piece.position)")
-            } catch {
-                print("❌ Failed to load model for \(piece.name): \(error)")
+                break
             }
         }
         
-        content.add(kitAnchor)
-        print("🥁 Drum kit setup complete!")
+        // Continue searching children
+        for child in entity.children {
+            searchAndConfigureEntities(child, drumMapping: drumMapping, depth: depth + 1)
+        }
     }
     
     /// Handle tap on a drum entity
     private func handleDrumTap(entity: Entity) {
+        // Log detailed tap information
+        print("👆 TAP DETECTED:")
+        print("   Entity: \(entity.name)")
+        print("   Position: \(entity.position(relativeTo: nil))")
+        print("   Parent: \(entity.parent?.name ?? "none")")
+        
         // Search up the entity hierarchy to find a drum ID
         // This handles cases where we tap a child entity (like "Cube" inside "kick")
         var currentEntity: Entity? = entity
         var drumId: String? = nil
+        var searchDepth = 0
         
         while currentEntity != nil && drumId == nil {
-            drumId = drumController.getDrumIdFromEntity(name: currentEntity!.name)
+            let entityName = currentEntity!.name
+            print("   Checking entity[\(searchDepth)]: \(entityName)")
+            drumId = drumController.getDrumIdFromEntity(name: entityName)
+            if drumId != nil {
+                print("   ✅ Found drum ID: \(drumId!) at depth \(searchDepth)")
+            }
             currentEntity = currentEntity?.parent
+            searchDepth += 1
         }
         
         if let drumId = drumId {
@@ -120,7 +172,9 @@ struct DrumVolumeView: View {
             print("🎵 Drum tapped: \(drumId) with velocity: \(velocity)")
         } else {
             message = "Tapped: \(entity.name)"
-            print("⚠️ Tapped unknown entity: \(entity.name) (parent: \(entity.parent?.name ?? "none"))")
+            print("❌ NO DRUM ID FOUND - hierarchy searched up \(searchDepth) levels")
+            print("   Entity name: \(entity.name)")
+            print("   Available drums: \(drumController.drumKit.pieces.map { $0.id }.joined(separator: ", "))")
         }
     }
 }
