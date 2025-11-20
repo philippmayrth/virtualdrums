@@ -28,46 +28,92 @@ struct DrumPiece: Identifiable {
 /// Standard drum kit configuration
 struct DrumKit {
     var pieces: [DrumPiece]
+    let name: String
+    let description: String
     
-    // Test kit using the existing 808-bass-drum sound for all drums
-    static let test = DrumKit(pieces: [
-        DrumPiece(id: "kick", name: "Test Kick", soundFileName: "808-bass-drum-421219",
-                  position: [0, 0, 0], modelName: "TestCube")
-    ])
+    // Bite Kit - Aggressive drum sounds
+    static let bite = DrumKit(
+        pieces: [
+            DrumPiece(id: "kick", name: "Kick Drum", soundFileName: "Bite_kick",
+                      position: [0, 0, 0.5], modelName: "TestCube"),
+            DrumPiece(id: "snare", name: "Snare Drum", soundFileName: "Bite_snare",
+                      position: [-0.3, 0.1, 0], modelName: "TestCube"),
+            DrumPiece(id: "hihat", name: "Hi-Hat", soundFileName: "Bite_hihat",
+                      position: [0.3, 0.15, 0], modelName: "TestCube"),
+            DrumPiece(id: "tom1", name: "Tom 1", soundFileName: "Bite_tom1",
+                      position: [-0.2, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom2", name: "Tom 2", soundFileName: "Bite_tom2",
+                      position: [0, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom3", name: "Tom 3", soundFileName: "Bite_tom3",
+                      position: [0.4, 0, 0.2], modelName: "TestCube"),
+            DrumPiece(id: "crash", name: "Crash Cymbal", soundFileName: "Bite_crash",
+                      position: [-0.5, 0.4, -0.3], modelName: "TestCube"),
+            DrumPiece(id: "ride", name: "Ride Cymbal", soundFileName: "Bite_ride",
+                      position: [0.5, 0.35, -0.3], modelName: "TestCube")
+        ],
+        name: "Bite Kit",
+        description: "Aggressive, punchy drum sounds"
+    )
     
-    static let standard = DrumKit(pieces: [
-        // Kick drum
-        DrumPiece(id: "kick", name: "Kick Drum", soundFileName: "kick",
-                  position: [0, 0, 0.5], modelName: "TestCube"),
-        
-        // Snare drum
-        DrumPiece(id: "snare", name: "Snare Drum", soundFileName: "snare",
-                  position: [-0.3, 0.1, 0], modelName: "TestCube"),
-        
-        // Hi-hat
-        DrumPiece(id: "hihat", name: "Hi-Hat", soundFileName: "hihat",
-                  position: [0.3, 0.15, 0], modelName: "TestCube"),
-        
-        // Tom 1 (high)
-        DrumPiece(id: "tom1", name: "Tom 1", soundFileName: "tom1",
-                  position: [-0.2, 0.2, -0.2], modelName: "TestCube"),
-        
-        // Tom 2 (mid)
-        DrumPiece(id: "tom2", name: "Tom 2", soundFileName: "tom2",
-                  position: [0, 0.2, -0.2], modelName: "TestCube"),
-        
-        // Tom 3 (floor)
-        DrumPiece(id: "tom3", name: "Tom 3", soundFileName: "tom3",
-                  position: [0.4, 0, 0.2], modelName: "TestCube"),
-        
-        // Crash cymbal
-        DrumPiece(id: "crash", name: "Crash Cymbal", soundFileName: "crash",
-                  position: [-0.5, 0.4, -0.3], modelName: "TestCube"),
-        
-        // Ride cymbal
-        DrumPiece(id: "ride", name: "Ride Cymbal", soundFileName: "ride",
-                  position: [0.5, 0.35, -0.3], modelName: "TestCube")
-    ])
+    // Kick Kit - Deep, powerful drum sounds
+    static let kick = DrumKit(
+        pieces: [
+            DrumPiece(id: "kick", name: "Kick Drum", soundFileName: "Kick_kick",
+                      position: [0, 0, 0.5], modelName: "TestCube"),
+            DrumPiece(id: "snare", name: "Snare Drum", soundFileName: "Kick_snare",
+                      position: [-0.3, 0.1, 0], modelName: "TestCube"),
+            DrumPiece(id: "hihat", name: "Hi-Hat", soundFileName: "Kick_hihat",
+                      position: [0.3, 0.15, 0], modelName: "TestCube"),
+            DrumPiece(id: "tom1", name: "Tom 1", soundFileName: "Kick_tom1",
+                      position: [-0.2, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom2", name: "Tom 2", soundFileName: "Kick_tom2",
+                      position: [0, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom3", name: "Tom 3", soundFileName: "Kick_tom3",
+                      position: [0.4, 0, 0.2], modelName: "TestCube"),
+            DrumPiece(id: "crash", name: "Crash Cymbal", soundFileName: "Kick_crash",
+                      position: [-0.5, 0.4, -0.3], modelName: "TestCube"),
+            DrumPiece(id: "ride", name: "Ride Cymbal", soundFileName: "Kick_ride",
+                      position: [0.5, 0.35, -0.3], modelName: "TestCube")
+        ],
+        name: "Kick Kit",
+        description: "Deep, powerful drum sounds"
+    )
+    
+    // Squeeze Kit - Tight, compressed drum sounds
+    static let squeeze = DrumKit(
+        pieces: [
+            DrumPiece(id: "kick", name: "Kick Drum", soundFileName: "Squeeze_kick",
+                      position: [0, 0, 0.5], modelName: "TestCube"),
+            DrumPiece(id: "snare", name: "Snare Drum", soundFileName: "Squeeze_snare",
+                      position: [-0.3, 0.1, 0], modelName: "TestCube"),
+            DrumPiece(id: "hihat", name: "Hi-Hat", soundFileName: "Squeeze_hihat",
+                      position: [0.3, 0.15, 0], modelName: "TestCube"),
+            DrumPiece(id: "tom1", name: "Tom 1", soundFileName: "Squeeze_tom1",
+                      position: [-0.2, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom2", name: "Tom 2", soundFileName: "Squeeze_tom2",
+                      position: [0, 0.2, -0.2], modelName: "TestCube"),
+            DrumPiece(id: "tom3", name: "Tom 3", soundFileName: "Squeeze_tom3",
+                      position: [0.4, 0, 0.2], modelName: "TestCube"),
+            DrumPiece(id: "crash", name: "Crash Cymbal", soundFileName: "Squeeze_crash",
+                      position: [-0.5, 0.4, -0.3], modelName: "TestCube"),
+            DrumPiece(id: "ride", name: "Ride Cymbal", soundFileName: "Squeeze_ride",
+                      position: [0.5, 0.35, -0.3], modelName: "TestCube")
+        ],
+        name: "Squeeze Kit",
+        description: "Tight, compressed drum sounds"
+    )
+    
+    // Registry of all available kits
+    static let allKits: [String: DrumKit] = [
+        "bite": bite,
+        "kick": kick,
+        "squeeze": squeeze
+    ]
+    
+    // Get kit by name, with fallback
+    static func kit(named name: String) -> DrumKit {
+        return allKits[name] ?? bite
+    }
 }
 
 // MARK: - Polyphonic Audio Engine
@@ -179,7 +225,7 @@ class DrumController: ObservableObject {
     @Published var lastHitDrum: String?
     @Published var hitCount: Int = 0
     
-    init(drumKit: DrumKit = .standard, maxPolyphony: Int = 8) {
+    init(drumKit: DrumKit = .bite, maxPolyphony: Int = 8) {
         self.drumKit = drumKit
         self.audioEngine = PolyphonicDrumAudioEngine(maxPolyphony: maxPolyphony)
     }

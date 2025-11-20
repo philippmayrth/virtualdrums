@@ -9,12 +9,16 @@ import SwiftUI
 
 @main
 struct virtualdrumsApp: App {
+    @StateObject private var appState = AppState()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appState)
         }
         ImmersiveSpace(id: "drum-volume") {
             DrumVolumeView()
+                .environmentObject(appState)
         }
     }
 }
