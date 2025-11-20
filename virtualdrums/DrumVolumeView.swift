@@ -57,7 +57,7 @@ struct DrumVolumeView: View {
     
     /// Setup the complete drum kit in 3D space
     private func setupDrumKit(content: RealityViewContent) async {
-        let kitAnchor = AnchorEntity(world: [0, 1.0, -2])
+        let kitAnchor = AnchorEntity(world: [0, 0.8, -1.5])  // Adjusted: lower Y (0.8) and closer Z (-1.5)
         
         do {
             // Load the functional drum kit with named parts (ugly but works!)
@@ -65,7 +65,7 @@ struct DrumVolumeView: View {
             
             // Scale and position the entire kit
             drumKitEntity.scale = [0.01, 0.01, 0.01]
-            drumKitEntity.position = [0, 0, 0]
+            drumKitEntity.position = [0, 0, 0]  // Reset to center of anchor
             
             print("📦 Loaded DrumKit_Named model")
             
