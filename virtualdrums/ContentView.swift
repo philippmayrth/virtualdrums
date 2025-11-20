@@ -14,12 +14,19 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Button("Place drum (just a shpere for now) in the room") {
+            Button("Place 'TestCube' drum in the room") {
                 Task {
                     await openImmersiveSpace(id: "drum-volume")
                 }
             }
             .padding(.bottom, 20)
+
+            // Load the TestCube model from the app's main bundle so the cube model is shown
+            // instead of the default sphere placeholder that appears when the named asset
+            // isn't found in the RealityKitContent bundle.
+            Model3D(named: "TestCube", bundle: .main)
+                .frame(width: 300, height: 300)
+                .padding(.bottom, 20)
 
             //Model3D(named: "Scene", bundle: realityKitContentBundle)
             //.padding(.bottom, 50)
