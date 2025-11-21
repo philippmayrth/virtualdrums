@@ -1,5 +1,9 @@
 # Virtual Drums
 
+A virtual DrumKit that runs on the Apple Vision Pro.
+
+<img src="virtualdrums/icon/Marketing%20FULL.png" width="300" height="300">
+
 ## Required Software
 
 This is a complex software, as such it requires a lot of specialized tools.
@@ -9,12 +13,12 @@ This is a complex software, as such it requires a lot of specialized tools.
 3D modeling software, free.
 https://www.blender.org/
 
-## Affinity Designer
+### Affinity Designer
 
 Professional design tool. Used to create the app icon. Free version available.
 https://www.affinity.studio/en/graphic-design-software
 
-## Logic Pro
+### Logic Pro
 
 Professional audio software, used for drum sounds. Free 90 day trial available.
 https://www.apple.com/de/logic-pro/
