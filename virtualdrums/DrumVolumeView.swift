@@ -74,21 +74,31 @@ struct DrumVolumeView: View {
     }
     
     private func setupDrumKit(content: RealityViewContent) async {
-        guard let controller = drumController else { return }
-        
-        let kitAnchor = AnchorEntity(world: [0, -0.3, -0.5])
-        
+        guard drumController != nil else { return }
+                    
         do {
+            // 1. Create floor plana anchor
+            let floorAnchor = AnchorEntity(
+                .plane(
+                    .horizontal,
+                    classification: .floor,
+                    minimumBounds: [1, 1]  // TODO: adjust depending on final model size
+                )
+            )
+                
+            // 2. Load the drum kit model
             let drumKitEntity = try await Entity(named: "DrumKit_Named", in: .main)
             drumKitEntity.scale = [0.01, 0.01, 0.01]
             drumKitEntity.position = [0, 0, 0]
+            drumKitEntity.transform.rotation = simd_quatf(angle: .pi, axis: [0, 1, 0]) // Faces the kit towards the user
             
-            print("📦 Loaded DrumKit_Named model")
-            
+            // 3. Configure input & collisions for individual drums
             configureDrumParts(entity: drumKitEntity)
             drumKitEntity.generateCollisionShapes(recursive: true)
-            kitAnchor.addChild(drumKitEntity)
-            content.add(kitAnchor)
+                        
+            // 4. Add the kit to the floor anchor and anchor to the scene
+            floorAnchor.addChild(drumKitEntity)
+            content.add(floorAnchor)
             
             print("🥁 Drum kit setup complete!")
         } catch {
@@ -101,7 +111,7 @@ struct DrumVolumeView: View {
         let drumMapping: [String: String] = [
             "Snare_Skin": "snare",
             "Bass_Outer_Skin": "kick",
-            "TomTom_Skin": "tom1",       // Only one tom in the model - maps to tom1
+            "TomTom_Skin": "tom1",        // Only one tom in the model - maps to tom1
             "Cymbol": "crash",            // Cymbal misspelled in model - maps to crash
             "Hi": "hihat",                // For any Hi-Hat variations
             // Note: The ugly model only has 1 tom and 1 cymbal
