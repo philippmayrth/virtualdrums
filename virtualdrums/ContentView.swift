@@ -15,14 +15,16 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 30) {
-            Text("Select Your Drum Kit")
+            
+            Text("Drum Sound Kits")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .padding(.top, 40)
             
-            Text("Choose a kit to play in VR")
-                .font(.subheadline)
+            Text("Select a kit to change the sound of your drums!")
+                .font(.title2)
                 .foregroundColor(.secondary)
+                .fontWeight(.medium)
             
             // Drum kit selection buttons
             VStack(spacing: 20) {
@@ -55,10 +57,11 @@ struct ContentView: View {
             Model3D(named: "DrumKit_Named", bundle: .main)
                 .frame(width: 250, height: 250)
             
-            Text("Tap a drum kit to enter VR")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.bottom, 20)
+//            Text("Tap a drum kit to enter VR")
+//                .font(.caption)
+//                .foregroundColor(.secondary)
+//                .padding(.bottom, 20)
+
         }
         .padding()
     }
