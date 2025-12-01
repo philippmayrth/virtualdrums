@@ -13,4 +13,5 @@ import Combine
 @MainActor
 class AppState: ObservableObject {
     @Published var selectedDrumKitName: String = "bite"
+    @Published var isImmersiveSpaceOpen: Bool = false
 }

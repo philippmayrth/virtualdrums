@@ -21,6 +21,12 @@ struct virtualdrumsApp: App {
         ImmersiveSpace(id: "drum-volume") {
             DrumVolumeView()
                 .environmentObject(appState)
+                .onAppear {
+                    appState.isImmersiveSpaceOpen = true
+                }
+                .onDisappear {
+                    appState.isImmersiveSpaceOpen = false
+                }
         }
     }
 }

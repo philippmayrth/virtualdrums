@@ -77,7 +77,9 @@ struct DrumKitButton: View {
         Button {
             Task {
                 appState.selectedDrumKitName = kitName
-                await openImmersiveSpace(id: "drum-volume")
+                if !appState.isImmersiveSpaceOpen {
+                    await openImmersiveSpace(id: "drum-volume")
+                }
             }
         } label: {
             HStack {
