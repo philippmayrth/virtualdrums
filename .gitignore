@@ -1,0 +1,10 @@
+# Xcode
+
+## User settings
+xcuserdata/
+
+# Build products
+.build/
+
+# macOS files
+.DS_Store
