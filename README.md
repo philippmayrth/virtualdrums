@@ -29,7 +29,7 @@ Files in the `external` dir require external software to open/edit. Those files 
 
 ### App Icon
 
-Files for the app icon can be found in the `icon` dir. There are two types. Prefixed with `App` are used inside of Xcode and prexied with `Marketing` can be used on App Sotre Connect. There are @1 and @2 available for most. The background icon for use in the app is exported as JPG not as PNG like all others, that is becuase XCode otherwise throws an error due to alpha channel being present in that image.
+Files for the app icon can be found in the `icon` dir. There are two types. Prefixed with `App` are used inside of Xcode and prefixed with `Marketing` can be used on App Store Connect. There are @1 and @2 available for most. The background icon for use in the app is exported as JPG not as PNG like all others, that is becuase XCode otherwise throws an error due to alpha channel being present in that image.
 
 ### Drum Sounds
 
@@ -37,4 +37,4 @@ Found in `soundkit`. All files are prefixed with the name of the drum kit sound 
 
 ### DrumKit
 
-The drumkit asset is currently `DrumKit_Named` it was the only free model on sketchfab (https://sketchfab.com/3d-models/drum-kit-57f6bb6e93c14762b0da1be2a50f1f44) that had objects named so sound could be mapped on it.
+The drumkit asset is currently `DrumKit_Named`. It was the only free model on sketchfab (https://sketchfab.com/3d-models/drum-kit-57f6bb6e93c14762b0da1be2a50f1f44) that had objects named so sound could be mapped on it.
