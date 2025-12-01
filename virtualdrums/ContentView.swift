@@ -53,9 +53,9 @@ struct ContentView: View {
             
             Spacer()
             
-            // Preview
-            Model3D(named: "DrumKit_Named", bundle: .main)
-                .frame(width: 250, height: 250)
+//            // Preview
+//            Model3D(named: "DrumKit_Named", bundle: .main)
+//                .frame(width: 250, height: 250)
             
 //            Text("Tap a drum kit to enter VR")
 //                .font(.caption)
