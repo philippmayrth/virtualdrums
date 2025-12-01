@@ -83,34 +83,23 @@ struct DrumKitButton: View {
             HStack {
                 Text("🥁")
                     .font(.system(size: 40))
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading) {
                     Text(kit.name)
                         .font(.title2)
                         .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    Text(kit.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Text(kit.description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(kit.pieces.count) drums")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.trailing, 25)
+                    }
                 }
-                Spacer()
-                Text("\(kit.pieces.count) drums")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.secondary.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .background(Color.accentColor.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 2)
-            )
         }
-        .buttonStyle(.plain)
     }
 }
 
