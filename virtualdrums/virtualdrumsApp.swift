@@ -16,6 +16,8 @@ struct virtualdrumsApp: App {
             ContentView()
                 .environmentObject(appState)
         }
+        .windowResizability(.contentSize)
+        
         ImmersiveSpace(id: "drum-volume") {
             DrumVolumeView()
                 .environmentObject(appState)
