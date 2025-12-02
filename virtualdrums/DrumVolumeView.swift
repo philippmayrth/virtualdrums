@@ -63,6 +63,9 @@ struct DrumVolumeView: View {
             .padding(),
             alignment: .top
         )
+        .onChange(of: appState.selectedDrumKitName) { _, newKitName in
+            changeDrumKit(to: newKitName)
+        }
     }
     
     private func setupController() {
@@ -139,6 +142,20 @@ struct DrumVolumeView: View {
         for child in entity.children {
             searchAndConfigureEntities(child, drumMapping: drumMapping, depth: depth + 1)
         }
+    }
+    
+    private func changeDrumKit(to kitName: String) {
+        guard let controller = drumController else {
+            setupController()
+            return
+        }
+        
+        let newKit = DrumKit.kit(named: kitName)
+        controller.drumKit = newKit
+        controller.setup()
+        
+        message = "Switched to \(kitName)"
+        print("Switched drum kit to \(kitName)")
     }
     
     private func handleDrumTap(entity: Entity) {

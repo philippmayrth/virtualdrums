@@ -134,6 +134,13 @@ class PolyphonicDrumAudioEngine: ObservableObject {
     
     /// Load all drum sounds for a drum kit
     func loadDrumKit(_ drumKit: DrumKit) {
+        // Reset previous state so we fully switch kits
+        isReady = false
+        audioPlayers.removeAll()
+        currentPlayerIndex.removeAll()
+        loadedSounds.removeAll()
+        failedSounds.removeAll()
+        
         for piece in drumKit.pieces {
             loadSound(named: piece.soundFileName, forDrum: piece.id)
         }
