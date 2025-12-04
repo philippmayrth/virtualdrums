@@ -4,6 +4,9 @@ A virtual DrumKit that runs on the Apple Vision Pro.
 
 <img src="virtualdrums/icon/Marketing%20FULL.png" width="300" height="300">
 
+Im Projekt Virtual Drums haben wir uns die Frage gestellt, wie zukunftstauglich VR-Technologie tatsächlich ist. Als Plattform nutzen wir die Apple Vision Pro, programmiert mit Swift. Am besten lässt sich Technik evaluieren, indem man sie praktisch ausprobiert – daher haben wir ein virtuelles Drum Kit entwickelt. Inspiriert vom klassischen Instrument soll es die Möglichkeit bieten, mit der Apple Vision Pro Musik zu machen.
+Ein echtes Drum Kit zu ersetzen ist nicht Ziel dieses Projekts. Der eigentliche Mehrwert liegt darin, dass auch Musikerinnen und Musiker ohne Schlagzeugkenntnisse Beats für eigene Songs entwickeln können, ohne dabei auf die herkömmliche Drum-Sequenzer-Programmierung angewiesen zu sein.
+
 ## Required Software
 
 This is a complex software, as such it requires a lot of specialized tools.
