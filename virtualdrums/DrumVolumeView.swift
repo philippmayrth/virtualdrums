@@ -17,7 +17,7 @@ struct StickState {
 }
 
 struct StickConfig {
-    static let handleLength: Float = 0.3
+    static let handleLength: Float = 0.25
     static let handleRadius: Float = 0.005
     static let tipRadius: Float = 0.0075
 }
@@ -288,6 +288,7 @@ struct DrumVolumeView: View {
                 
         tipModel.name = "stick_tip_\(chirality)"
         tipModel.position.y = StickConfig.handleLength
+        tipModel.scale.y = 1.2
 
         tipModel.components.set(
             CollisionComponent(
