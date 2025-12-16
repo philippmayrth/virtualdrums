@@ -42,8 +42,7 @@ struct DrumVolumeView: View {
 
                 await setupDrumSticks(content: content)
                 await setupDrumKit(content: content)
-                await addMockDrum(content: content)
-                await setupCollisionSubscriptions(content: content)
+                await setupCollisions(content: content)
             }
             .gesture(
                 SpatialTapGesture()
@@ -95,82 +94,15 @@ struct DrumVolumeView: View {
         }
     }
     
+
+    // MARK: Drum Controller
+    
     private func setupController() {
         let selectedKit = DrumKit.kit(named: appState.selectedDrumKitName)
         let controller = DrumController(drumKit: selectedKit, maxPolyphony: 8)
         controller.setup()
         self.drumController = controller
         print("🎵 Loaded drum kit: \(selectedKit.name)")
-    }
-    
-    private func setupDrumKit(content: RealityViewContent) async {
-        guard drumController != nil else { return }
-                    
-        do {
-            // 1. Create floor plana anchor
-            let floorAnchor = AnchorEntity(
-                .plane(
-                    .horizontal,
-                    classification: .floor,
-                    minimumBounds: [1, 1]  // TODO: adjust depending on final model size
-                ),
-                trackingMode: .continuous,
-                physicsSimulation: .none
-            )
-                
-            // 2. Load the drum kit model
-            let drumKitEntity = try await Entity(named: "DrumKit_Named", in: .main)
-            drumKitEntity.scale = [0.01, 0.01, 0.01]
-            drumKitEntity.position = [0, 0, 0]
-            drumKitEntity.transform.rotation = simd_quatf(angle: .pi, axis: [0, 1, 0]) // Faces the kit towards the user
-            
-            // 3. Configure input & collisions for individual drums
-            configureDrumParts(entity: drumKitEntity)
-            drumKitEntity.generateCollisionShapes(recursive: true)
-                        
-            // 4. Add the kit to the floor anchor and anchor to the scene
-            floorAnchor.addChild(drumKitEntity)
-            content.add(floorAnchor)
-            
-            print("🥁 Drum kit setup complete!")
-        } catch {
-            print("❌ Failed to load DrumKit_Named model: \(error)")
-        }
-    }
-    
-    private func configureDrumParts(entity: Entity) {
-        // Map ALL drum entity names to drum IDs - now includes all 8 drums!
-        let drumMapping: [String: String] = [
-            "Snare_Skin": "snare",
-            "Bass_Outer_Skin": "kick",
-            "TomTom_Skin": "tom1",        // Only one tom in the model - maps to tom1
-            "Cymbol": "crash",            // Cymbal misspelled in model - maps to crash
-            "Hi": "hihat",                // For any Hi-Hat variations
-            // Note: The ugly model only has 1 tom and 1 cymbal
-            // tom2, tom3, ride won't be found in the model, so they won't be configured
-            // But the sounds will still be loaded and can be triggered programmatically
-        ]
-        
-        searchAndConfigureEntities(entity, drumMapping: drumMapping, depth: 0)
-    }
-    
-    private func searchAndConfigureEntities(_ entity: Entity, drumMapping: [String: String], depth: Int) {
-        let entityName = entity.name
-        
-        for (pattern, drumId) in drumMapping {
-            if entityName.contains(pattern) {
-                entity.components.set(InputTargetComponent())
-                if !entity.name.contains("_DRUM_") {
-                    entity.name = "\(entity.name)_DRUM_\(drumId)"
-                    print("✅ Configured: \(pattern) → \(drumId)")
-                }
-                break
-            }
-        }
-        
-        for child in entity.children {
-            searchAndConfigureEntities(child, drumMapping: drumMapping, depth: depth + 1)
-        }
     }
     
     private func changeDrumKit(to kitName: String) {
@@ -187,30 +119,54 @@ struct DrumVolumeView: View {
         print("Switched drum kit to \(kitName)")
     }
     
-    private func handleDrumTap(entity: Entity) {
-        guard let controller = drumController else { return }
-        
-        var currentEntity: Entity? = entity
-        var drumId: String? = nil
-        
-        while currentEntity != nil && drumId == nil {
-            drumId = controller.getDrumIdFromEntity(name: currentEntity!.name)
-            currentEntity = currentEntity?.parent
+    // MARK: Drum Entities
+    
+    @MainActor
+    private func setupDrumKit(content: RealityViewContent) async {
+        let drumKitEntity: Entity
+        do {
+            drumKitEntity = try await Entity(named: "burgundy_drum", in: .main)
+        } catch {
+            print("Failed to load drum kit model: \(error)")
+            return
         }
         
-        if let drumId = drumId {
-            let velocity: Float = Float.random(in: 0.7...1.0)
-            controller.hitDrum(id: drumId, velocity: velocity)
-            
-            if let piece = controller.getDrumPiece(id: drumId) {
-                message = "🥁 \(piece.name) played!"
+        drumKitEntity.position = [0, 0.15, -0.6] // Position the drum infront of the user
+                
+        await setupTargetsRecursively(from: drumKitEntity)
+                            
+        content.add(drumKitEntity)
+        print("🥁 Drum kit setup complete!")
+    }
+    
+    private func setupTargetsRecursively(from entity: Entity) async {
+        for child in entity.children {
+            if let model = child as? ModelEntity,
+                model.name.starts(with: "target_"){
+                await setupDrum(drum: model)
             }
             
-            print("🎵 \(drumId) - velocity: \(velocity)")
-        } else {
-            message = "Tapped: \(entity.name)"
-            print("⚠️ Unknown: \(entity.name)")
+            await setupTargetsRecursively(from: child) // recurse into grandchildren, etc.
         }
+    }
+    
+    private func setupDrum(drum: ModelEntity) async {
+        var colliderShape: ShapeResource
+        do {
+            colliderShape = try await .generateConvex(from: drum.model!.mesh)
+        } catch {
+            print("collider shape could not be generated from mesh. using box instead")
+            return
+        }
+        
+        drum.components.set(
+            CollisionComponent(
+                shapes: [colliderShape],
+                filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
+            )
+        )
+        
+        print ("Drum set up: ", drum.name)
     }
 
     @MainActor
@@ -325,7 +281,7 @@ struct DrumVolumeView: View {
     
     // MARK: Collision Detection
     
-    private func setupCollisionSubscriptions(content: RealityViewContent) async {
+    private func setupCollisions(content: RealityViewContent) async {
         self.collisionsOfLeftStick = content.subscribe(
             to: CollisionEvents.Began.self,
             on: leftStickState?.collidingEntity
@@ -339,6 +295,35 @@ struct DrumVolumeView: View {
     
     private func handleCollision(event: CollisionEvents.Began) {
         print("Collision with: ", event.entityB.name)
+        
+        
+    }
+    
+    /// Method that hitting drums via click gesture (used for Simulator)
+    private func handleDrumTap(entity: Entity) {
+        guard let controller = drumController else { return }
+        
+        var currentEntity: Entity? = entity
+        var drumId: String? = nil
+        
+        while currentEntity != nil && drumId == nil {
+            drumId = controller.getDrumIdFromEntity(name: currentEntity!.name)
+            currentEntity = currentEntity?.parent
+        }
+        
+        if let drumId = drumId {
+            let velocity: Float = Float.random(in: 0.7...1.0)
+            controller.hitDrum(id: drumId, velocity: velocity)
+            
+            if let piece = controller.getDrumPiece(id: drumId) {
+                message = "🥁 \(piece.name) played!"
+            }
+            
+            print("🎵 \(drumId) - velocity: \(velocity)")
+        } else {
+            message = "Tapped: \(entity.name)"
+            print("⚠️ Unknown: \(entity.name)")
+        }
     }
 }
 
