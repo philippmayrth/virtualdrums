@@ -227,9 +227,7 @@ struct DrumVolumeView: View {
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
-        let entity = Entity()
-        entity.addChild(drum)
-        content.add(entity)
+        content.add(drum)
     }
     
     // MARK: Drum Sticks
