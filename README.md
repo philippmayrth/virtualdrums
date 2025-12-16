@@ -40,4 +40,5 @@ Found in `soundkit`. All files are prefixed with the name of the drum kit sound 
 
 ### DrumKit
 
-The drumkit asset is currently `DrumKit_Named`. It was the only free model on sketchfab (https://sketchfab.com/3d-models/drum-kit-57f6bb6e93c14762b0da1be2a50f1f44) that had objects named so sound could be mapped on it.
+- [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution) 
+- [drum kit](https://skfb.ly/oZroJ) (CC Attribution)
