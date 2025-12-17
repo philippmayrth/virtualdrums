@@ -59,7 +59,7 @@ struct DrumVolumeView: View {
         do {
             drumKitEntity = try await Entity(named: "burgundy_drum", in: .main)
         } catch {
-            print("Failed to load drum kit model: \(error)")
+            print("❌ Failed to load drum kit model: \(error)")
             return
         }
         
@@ -68,7 +68,6 @@ struct DrumVolumeView: View {
         await setupTargetsRecursively(from: drumKitEntity)
         
         content.add(drumKitEntity)
-        print("🥁 Drum kit setup complete!")
     }
     
     private func setupTargetsRecursively(from entity: Entity) async {
@@ -87,7 +86,7 @@ struct DrumVolumeView: View {
         do {
             colliderShape = try await .generateConvex(from: entity.model!.mesh)
         } catch {
-            print("collider shape could not be generated from mesh. using box instead")
+            print("⚠️ collider shape could not be generated from mesh. using box instead")
             return
         }
         
@@ -103,7 +102,7 @@ struct DrumVolumeView: View {
         #endif // targetEnvironment(simulator)
         
         AudioEngine.shared.loadDrumSound(drum: DrumID(rawValue: entity.name)!)
-        print ("Drum set up: ", entity.name)
+        print ("✅ Drum piece set up: ", entity.name)
     }
 
     @MainActor

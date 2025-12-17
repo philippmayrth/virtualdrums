@@ -27,6 +27,7 @@ class DrumController: ObservableObject {
     /// Handle a drum hit with velocity detection
     func hitDrum(drum: DrumID) {
         AudioEngine.shared.playSound(drum: drum)
+        print("🥁 Hit drum: \(drum.rawValue)")
     }
     
 }

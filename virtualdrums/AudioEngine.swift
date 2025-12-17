@@ -53,7 +53,7 @@ final class AudioEngine: ObservableObject {
         // Reset to beginning and play
         player.currentTime = 0
         player.play()
-        print("🥁 Playing \(drum) - volume: \(volume), pitch: \(pitch)")
+        print("🎶 Playing sound \(drum) - volume: \(volume), pitch: \(pitch)")
     }
     
     /// Load a single sound with polyphony support
@@ -91,7 +91,7 @@ final class AudioEngine: ObservableObject {
 
         audioPlayers[drum] = players
         currentPlayerIndex[drum] = 0
-        print("✅ Loaded \(drum) with \(maxPolyphony)x polyphony")
+        print("✅ Loaded \(drum) sound with \(maxPolyphony)x polyphony")
     }
     
     private func loadDrumKit(kit: DrumKitID) {
