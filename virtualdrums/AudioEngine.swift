@@ -63,6 +63,11 @@ final class AudioEngine: ObservableObject {
             return
         }
 
+        if (audioPlayers[drum] != nil) {
+            print("Player for \(drum.rawValue) already loaded. Skipping.")
+            return
+        }
+        
         let fileName = "\(selectedDrumKit)_\(drum)"
 
         // Try multiple file extensions
@@ -118,7 +123,7 @@ final class AudioEngine: ObservableObject {
         // 7. Ready to play
         isReady = true
 
-        print("✅ Drum kit sounds loaded: \(kit)")
+        print("✅ Drum kit sounds loaded: \(kit) (\(audioPlayers.count) players)")
     }
         
     /// Stop all sounds

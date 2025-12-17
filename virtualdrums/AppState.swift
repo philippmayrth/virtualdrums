@@ -13,6 +13,7 @@ import Combine
 @MainActor
 class AppState: ObservableObject {
     @Published var selectedDrumKit: DrumKitID = .bite
+    @Published var selectedDrumSet: DrumSetID = .burgundy_drum
     @Published var isImmersiveSpaceOpen: Bool = false
     
     /// Stores Combine subscriptions to keep them alive

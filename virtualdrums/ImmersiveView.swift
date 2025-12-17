@@ -29,6 +29,7 @@ struct ImmersiveView: View {
     @State private var rightStickState: StickState?
     @State private var collisionsOfLeftStick: EventSubscription?
     @State private var collisionsOfRightStick: EventSubscription?
+    @State private var rootDrumEntity = Entity()
     
     var body: some View {
         ZStack {
@@ -36,7 +37,10 @@ struct ImmersiveView: View {
                 #if !targetEnvironment(simulator)
                 await setupDrumSticks(content: content)
                 #endif // !targetEnvironment(simulator)
-                await setupDrumKit(content: content)
+                
+                await setupDrumSet(drumSet: appState.selectedDrumSet)
+                content.add(rootDrumEntity)
+
                 await setupCollisions(content: content)
             }
             #if targetEnvironment(simulator)
@@ -49,26 +53,40 @@ struct ImmersiveView: View {
             )
             #endif // targetEnvironment(simulator)
         }
+        .onChange(of: appState.selectedDrumSet, { oldSetID, newSetID in
+            Task {
+                await removeDrumSet(drumSet: oldSetID)
+                await setupDrumSet(drumSet: newSetID)
+            }
+        })
     }
     
     
     // MARK: Drum Set Entities
     
     @MainActor
-    private func setupDrumKit(content: RealityViewContent) async {
-        let drumKitEntity: Entity
+    private func removeDrumSet(drumSet: DrumSetID) async {
+        if let drumSetEntity = rootDrumEntity.children.first(where: { $0.name == drumSet.rawValue }) {
+            drumSetEntity.removeFromParent()
+        }
+    }
+    
+    @MainActor
+    private func setupDrumSet(drumSet: DrumSetID) async {
+        let drumSetEntity: Entity
         do {
-            drumKitEntity = try await Entity(named: "burgundy_drum", in: .main)
+            drumSetEntity = try await Entity(named: drumSet.rawValue, in: .main)
         } catch {
-            print("❌ Failed to load drum kit model: \(error)")
+            print("❌ Failed to load drum set model: \(error)")
             return
         }
         
-        drumKitEntity.position = [0, 0.15, -0.6] // Position the drum infront of the user
+        drumSetEntity.name = drumSet.rawValue
+        drumSetEntity.position = [0, 0.15, -0.6] // Position the drum infront of the user
         
-        await setupTargetsRecursively(from: drumKitEntity)
+        await setupTargetsRecursively(from: drumSetEntity)
         
-        content.add(drumKitEntity)
+        rootDrumEntity.addChild(drumSetEntity)
     }
     
     private func setupTargetsRecursively(from entity: Entity) async {

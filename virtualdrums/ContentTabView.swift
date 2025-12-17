@@ -34,7 +34,6 @@ struct ContentTabView: View {
                     Label("Credits", systemImage: "info.circle")
                 }
         }
-        .frame(minWidth: 600, maxWidth: 500, minHeight: 500, maxHeight: 500)
     }
 }
 

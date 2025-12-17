@@ -9,6 +9,39 @@ import SwiftUI
 import RealityKit
 import RealityKitContent
 
+enum DrumKitID: String, CaseIterable, Identifiable {
+    case bite
+    case kick
+    case squeeze
+
+    var id: String { rawValue }
+}
+
+private struct DrumKit: Identifiable {
+    let id: DrumKitID
+    let label: String
+    let description: String
+
+    static let bite = DrumKit(
+        id: .bite,
+        label: "Bite Kit",
+        description: "Aggressive, punchy drum sounds"
+    )    
+    static let kick = DrumKit(
+        id: .kick,
+        label: "Kick Kit",
+        description: "Deep, powerful drum sounds"
+    )
+    static let squeeze = DrumKit(
+        id: .squeeze,
+        label: "Squeeze Kit",
+        description: "Tight, compressed drum sounds"
+    )
+    
+    /// Collection for looping
+    static let all: [DrumKit] = [.bite, .kick, .squeeze]
+}
+
 struct DrumKitView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
@@ -38,7 +71,6 @@ struct DrumKitView: View {
             }
         }
         .padding(60)
-        .fixedSize()
     }
 }
 
@@ -58,60 +90,20 @@ private struct DrumKitButton: View {
             }
         } label: {
             HStack {
-                Text("🥁")
+                Text("🎶")
                     .font(.system(size: 40))
                 VStack(alignment: .leading) {
                     Text(kit.label)
                         .font(.title2)
                         .fontWeight(.semibold)
-                    HStack {
-                        Text(kit.description)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
+                    Text(kit.description)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
+                Spacer()
             }
         }
     }
-}
-
-enum DrumKitID: String, CaseIterable, Identifiable {
-    case bite
-    case kick
-    case squeeze
-
-    var id: String { rawValue }
-}
-
-private struct DrumKit: Identifiable {
-    let id: DrumKitID
-    let label: String
-    let description: String
-    
-    // Bite Kit - Aggressive drum sounds
-    static let bite = DrumKit(
-        id: .bite,
-        label: "Bite Kit",
-        description: "Aggressive, punchy drum sounds"
-    )
-    
-    // Kick Kit - Deep, powerful drum sounds
-    static let kick = DrumKit(
-        id: .kick,
-        label: "Kick Kit",
-        description: "Deep, powerful drum sounds"
-    )
-    
-    // Squeeze Kit - Tight, compressed drum sounds
-    static let squeeze = DrumKit(
-        id: .squeeze,
-        label: "Squeeze Kit",
-        description: "Tight, compressed drum sounds"
-    )
-    
-    /// Collection for looping
-    static let all: [DrumKit] = [.bite, .kick, .squeeze]
 }
 
 #Preview(windowStyle: .automatic) {

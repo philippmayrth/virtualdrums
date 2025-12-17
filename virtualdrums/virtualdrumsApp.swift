@@ -16,6 +16,7 @@ struct virtualdrumsApp: App {
         WindowGroup {
             ContentTabView()
                 .environmentObject(appState)
+            .frame(minWidth: 600, maxWidth: 600, minHeight: 450, maxHeight: 450)
         }
         .windowResizability(.contentSize)
         
