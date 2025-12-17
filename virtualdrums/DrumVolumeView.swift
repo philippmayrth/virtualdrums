@@ -33,7 +33,6 @@ struct DrumVolumeView: View {
     var body: some View {
         ZStack {
             RealityView { content in
-
                 await setupDrumSticks(content: content)
                 await setupDrumKit(content: content)
                 await setupCollisions(content: content)
@@ -103,23 +102,6 @@ struct DrumVolumeView: View {
         
         AudioEngine.shared.loadDrumSound(drum: DrumID(rawValue: entity.name)!)
         print ("✅ Drum piece set up: ", entity.name)
-    }
-
-    @MainActor
-    private func addMockDrum(content: RealityViewContent) async {
-        let mesh = MeshResource.generateBox(size: 0.5)
-        let material = SimpleMaterial(color: .blue, isMetallic: false)
-        let drum = ModelEntity(mesh: mesh, materials: [material])
-        drum.name = "MockDrum"
-        drum.position = [0, 1, -1]
-        drum.generateCollisionShapes(recursive: false)
-        drum.components.set(
-            CollisionComponent(
-                shapes: drum.collision!.shapes,
-                filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
-            )
-        )
-        content.add(drum)
     }
     
     // MARK: Drum Sticks
