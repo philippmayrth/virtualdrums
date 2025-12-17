@@ -21,7 +21,7 @@
 		910055132EAA0EB700ABF163 /* Exceptions for "virtualdrums" folder in "virtualdrums" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				external,
+				assets/external,
 				Info.plist,
 			);
 			target = 910055042EAA0EB200ABF163 /* virtualdrums */;
@@ -35,7 +35,7 @@
 				910055132EAA0EB700ABF163 /* Exceptions for "virtualdrums" folder in "virtualdrums" target */,
 			);
 			explicitFolders = (
-				external,
+				assets/external,
 			);
 			path = virtualdrums;
 			sourceTree = "<group>";
