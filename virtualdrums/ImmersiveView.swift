@@ -27,9 +27,9 @@ struct ImmersiveView: View {
     @State private var drumController = DrumController()
     @State private var leftStickState: StickState?
     @State private var rightStickState: StickState?
-    @State private var collisionsOfLeftStick: EventSubscription?
-    @State private var collisionsOfRightStick: EventSubscription?
+    @State private var collisionSubscriptions: [EventSubscription] = []
     @State private var rootDrumEntity = Entity()
+    // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
     
     var body: some View {
         ZStack {
@@ -216,19 +216,20 @@ struct ImmersiveView: View {
         anchor.addChild(stick)
         return anchor
     }
-    
-    // MARK: Collision Detection
-    
-    private func setupCollisions(content: RealityViewContent) async {
-        self.collisionsOfLeftStick = content.subscribe(
-            to: CollisionEvents.Began.self,
-            on: leftStickState?.collidingEntity
-        ) { event in handleCollision(event: event) }
 
-        self.collisionsOfRightStick = content.subscribe(
-            to: CollisionEvents.Began.self,
-            on: rightStickState?.collidingEntity
-        ) { event in self.handleCollision(event: event) }
+    // MARK: Collision Detection
+
+    private func setupCollisions(content: RealityViewContent) async {
+        [leftStickState?.collidingEntity, rightStickState?.collidingEntity]
+            .compactMap{ $0 }
+            .forEach { stick in
+                let sub = content.subscribe(
+                    to: CollisionEvents.Began.self,
+                    on: stick
+                ) { event in handleCollision(event: event) }
+
+                collisionSubscriptions.append(sub)
+            }
     }
     
     private func handleCollision(event: CollisionEvents.Began) {
