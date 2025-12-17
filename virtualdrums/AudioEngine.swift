@@ -19,8 +19,8 @@ final class AudioEngine: ObservableObject {
     // MARK: - Audio Engine
     
     @Published var isReady: Bool = false
-    private var audioPlayers: [String: [AVAudioPlayer]] = [:]
-    private var currentPlayerIndex: [String: Int] = [:]
+    private var audioPlayers: [DrumID: [AVAudioPlayer]] = [:]
+    private var currentPlayerIndex: [DrumID: Int] = [:]
     private let maxPolyphony: Int
     private var selectedDrumKit: DrumKitID?
     let volumeJitter: Float = 0.04   // ±4%
@@ -31,18 +31,18 @@ final class AudioEngine: ObservableObject {
         self.loadDrumKit(kit: kit)
     }
     
-    func playSound(drumName: String) {
-        guard let players = audioPlayers[drumName], !players.isEmpty else {
-            print("⚠️ No audio player available for drum: \(drumName)")
+    func playSound(drum: DrumID) {
+        guard let players = audioPlayers[drum], !players.isEmpty else {
+            print("⚠️ No audio player available for drum: \(drum)")
             return
         }
         
         // Get next available player (round-robin)
-        let index = currentPlayerIndex[drumName] ?? 0
+        let index = currentPlayerIndex[drum] ?? 0
         let player = players[index]
         
         // Update index for next hit
-        currentPlayerIndex[drumName] = (index + 1) % players.count
+        currentPlayerIndex[drum] = (index + 1) % players.count
         
         // Add random variation to voluem and pitch (TODO: use real velocity and hit position)
         let volume = 1 + randomOffset(volumeJitter)
@@ -53,17 +53,17 @@ final class AudioEngine: ObservableObject {
         // Reset to beginning and play
         player.currentTime = 0
         player.play()
-        print("🥁 Playing \(drumName) - volume: \(volume), pitch: \(pitch)")
+        print("🥁 Playing \(drum) - volume: \(volume), pitch: \(pitch)")
     }
     
     /// Load a single sound with polyphony support
-    func loadDrumSound(drumName: String) {
+    func loadDrumSound(drum: DrumID) {
         guard let selectedDrumKit else {
             print("⚠️ No drum kit selected")
             return
         }
 
-        let fileName = "\(selectedDrumKit)_\(drumName)"
+        let fileName = "\(selectedDrumKit)_\(drum)"
 
         // Try multiple file extensions
         let extensions = ["aif", "wav", "m4a", "mp3", "aiff"]
@@ -84,14 +84,14 @@ final class AudioEngine: ObservableObject {
                 player.enableRate = true // Allow pitch shifting
                 players.append(player)
             } catch {
-                print("❌ Error loading sound \(drumName): \(error)")
+                print("❌ Error loading sound \(drum): \(error)")
                 return
             }
         }
-        
-        audioPlayers[drumName] = players
-        currentPlayerIndex[drumName] = 0
-        print("✅ Loaded \(drumName) with \(maxPolyphony)x polyphony")
+
+        audioPlayers[drum] = players
+        currentPlayerIndex[drum] = 0
+        print("✅ Loaded \(drum) with \(maxPolyphony)x polyphony")
     }
     
     private func loadDrumKit(kit: DrumKitID) {
@@ -104,15 +104,15 @@ final class AudioEngine: ObservableObject {
         stopAll()
 
         // 3. Store existing drum names
-        let drumNames = Array(audioPlayers.keys)
+        let drums = Array(audioPlayers.keys)
 
         // 4. Reset state
         audioPlayers.removeAll()
         currentPlayerIndex.removeAll()
 
         // 6. Reload all drums with the new kit prefix
-        for drumName in drumNames {
-            loadDrumSound(drumName: drumName)
+        for drum in drums {
+            loadDrumSound(drum: drum)
         }
 
         // 7. Ready to play

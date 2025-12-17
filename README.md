@@ -26,30 +26,51 @@ https://www.affinity.studio/en/graphic-design-software
 Professional audio software, used for drum sounds. Free 90 day trial available.
 https://www.apple.com/de/logic-pro/
 
-## Project Structure
+### Exernal Project Files
 
 Files in the `external` dir require external software to open/edit. Those files are the source for the assets (audio, images, ...) used in the app.
 
-### App Icon
+## App Icon
 
 Files for the app icon can be found in the `icon` dir. There are two types. Prefixed with `App` are used inside of Xcode and prefixed with `Marketing` can be used on App Store Connect. There are @1 and @2 available for most. The background icon for use in the app is exported as JPG not as PNG like all others, that is becuase XCode otherwise throws an error due to alpha channel being present in that image.
 
-## DrumKit
+## Drum Sets (3D Models)
 
-* [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution)
-* [Drum Kit](https://skfb.ly/oZroJ) (CC Attribution)
+Located in `assets`.
 
 A **drum kit model** is provided as a `.usdz` file and can be imported as an `Entity`.
 Each `.usdz` file may contain multiple drum pieces, **each with its own separate mesh**.
 When imported, every drum piece becomes a `ModelEntity` that is a child of the root `Entity`.
 
+The available drum pieces are defined in `DrumController.swift` under `DrumID`.
+
+We currently have two drum sets with multiple modular drum pieces:
+
+* `burgundy_drum.usdz`
+  * [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution) (adjust for our needs in Blender)
+  1. target_snare
+  2. target_bass_drum
+  3. target_floor_tom
+  4. target_mid_tom
+  5. target_high_tom
+  6. target_hi_hat
+  7. target_ride
+  8. ~~target_crash~~
+* `drum_kit.usdz`
+  * [Drum Kit](https://skfb.ly/oZroJ) (CC Attribution) (adjust for our needs in Blender)
+  1. target_snare
+  2. target_bass_drum
+  3. target_floor_tom
+  4. target_mid_tom
+  5. target_high_tom
+  6. target_hi_hat
+  7. target_ride
+  8. target_crash
+
 ### Naming Convention
 
 Each drum piece **must** follow this naming format: `target-[drum-piece-name]`
-**Example:** `target_mid_tom`
-
-* `target`: used to identify valid collision targets.
-* `[drum-piece-name]`: used as the drum ID to trigger the correct sound.
+The prefix ensures we can validate the collision target and the drum piece suffix is to locate the correct sound.
 
 ### Editing `.usdz` in Blender
 
@@ -67,7 +88,7 @@ Some models may lose their materials during import. If that happens, this workfl
 5. Preview converts it to `.usdz`.
 6. Export `.usdz` file from Preview app
 
-## Drum Sounds
+## Drum Sound Kits
 
 Located in `soundkit`.
 

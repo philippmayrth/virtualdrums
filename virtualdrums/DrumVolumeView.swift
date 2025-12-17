@@ -38,18 +38,20 @@ struct DrumVolumeView: View {
                 await setupDrumKit(content: content)
                 await setupCollisions(content: content)
             }
-            //            .gesture(
-            //                SpatialTapGesture()
-            //                    .targetedToAnyEntity()
-            //                    .onEnded { value in
-            //                        handleDrumTap(entity: value.entity)
-            //                    }
-            //            )
+            #if targetEnvironment(simulator)
+            .gesture(
+                SpatialTapGesture()
+                    .targetedToAnyEntity()
+                    .onEnded { value in
+                        handleDrumClick(entity: value.entity)
+                    }
+            )
+            #endif // targetEnvironment(simulator)
         }
     }
     
     
-    // MARK: Drum Entities
+    // MARK: Drum Set Entities
     
     @MainActor
     private func setupDrumKit(content: RealityViewContent) async {
@@ -71,33 +73,37 @@ struct DrumVolumeView: View {
     
     private func setupTargetsRecursively(from entity: Entity) async {
         for child in entity.children {
-            if let model = child as? ModelEntity,
-               model.name.starts(with: "target_"){
-                await setupDrum(drum: model)
+            if let childEntity = child as? ModelEntity, // must be a ModelEntity (→ has a mesh)
+               DrumID(rawValue: childEntity.name) != nil { // must be a recognized drum (→ named "target_[drum_piece]")
+                await setupDrum(entity: childEntity)
             }
             
             await setupTargetsRecursively(from: child) // recurse into grandchildren, etc.
         }
     }
     
-    private func setupDrum(drum: ModelEntity) async {
+    private func setupDrum(entity: ModelEntity) async {
         var colliderShape: ShapeResource
         do {
-            colliderShape = try await .generateConvex(from: drum.model!.mesh)
+            colliderShape = try await .generateConvex(from: entity.model!.mesh)
         } catch {
             print("collider shape could not be generated from mesh. using box instead")
             return
         }
         
-        drum.components.set(
+        entity.components.set(
             CollisionComponent(
                 shapes: [colliderShape],
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
         
-        AudioEngine.shared.loadDrumSound(drumName: drum.name)
-        print ("Drum set up: ", drum.name)
+        #if targetEnvironment(simulator)
+        entity.components.set(InputTargetComponent())
+        #endif // targetEnvironment(simulator)
+        
+        AudioEngine.shared.loadDrumSound(drum: DrumID(rawValue: entity.name)!)
+        print ("Drum set up: ", entity.name)
     }
 
     @MainActor
@@ -228,37 +234,19 @@ struct DrumVolumeView: View {
         let name = event.entityB.name
          print("Collision with:", name)
         
-        if (name.hasPrefix("target_")) {
-            drumController.hitDrum(drum: name)
+        if let drumId = DrumID(rawValue: name) {
+            drumController.hitDrum(drum: drumId)
         }
     }
     
-/// Method that hitting drums via click gesture (used for Simulator)
-//    private func handleDrumTap(entity: Entity) {
-//        guard let controller = drumController else { return }
-//
-//        var currentEntity: Entity? = entity
-//        var drumId: String? = nil
-//
-//        while currentEntity != nil && drumId == nil {
-//            drumId = controller.getDrumIdFromEntity(name: currentEntity!.name)
-//            currentEntity = currentEntity?.parent
-//        }
-//
-//        if let drumId = drumId {
-//            let velocity: Float = Float.random(in: 0.7...1.0)
-//            controller.hitDrum(id: drumId, velocity: velocity)
-//
-//            if let piece = controller.getDrumPiece(id: drumId) {
-//                message = "🥁 \(piece.name) played!"
-//            }
-//
-//            print("🎵 \(drumId) - velocity: \(velocity)")
-//        } else {
-//            message = "Tapped: \(entity.name)"
-//            print("⚠️ Unknown: \(entity.name)")
-//        }
-//    }
+    #if targetEnvironment(simulator)
+    /// Method for hitting drums via click gesture (used for Simulator)
+    private func handleDrumClick(entity: Entity) {
+        if let drumId = DrumID(rawValue: entity.name) {
+            drumController.hitDrum(drum: drumId)
+        }
+    }
+    #endif // targetEnvironment(simulator)
     
 }
 
