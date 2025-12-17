@@ -22,13 +22,13 @@ final class AudioEngine: ObservableObject {
     private var audioPlayers: [String: [AVAudioPlayer]] = [:]
     private var currentPlayerIndex: [String: Int] = [:]
     private let maxPolyphony: Int
-    private var selectedDrumKit: String?
+    private var selectedDrumKit: DrumKitID?
     let volumeJitter: Float = 0.04   // ±4%
     let pitchJitter: Float = 0.015   // ±1.5%
     
-    func setDrumKit(kitName: String) {
-        self.selectedDrumKit = kitName
-        self.loadDrumKit(kitName: kitName)
+    func setDrumKit(kit: DrumKitID) {
+        self.selectedDrumKit = kit
+        self.loadDrumKit(kit: kit)
     }
     
     func playSound(drumName: String) {
@@ -94,8 +94,8 @@ final class AudioEngine: ObservableObject {
         print("✅ Loaded \(drumName) with \(maxPolyphony)x polyphony")
     }
     
-    private func loadDrumKit(kitName: String) {
-        print("🔄 Loading drum kit sounds: \(kitName)")
+    private func loadDrumKit(kit: DrumKitID) {
+        print("🔄 Loading drum kit sounds: \(kit)")
 
         // 1. Mark engine as busy
         isReady = false
@@ -118,7 +118,7 @@ final class AudioEngine: ObservableObject {
         // 7. Ready to play
         isReady = true
 
-        print("✅ Drum kit sounds loaded: \(kitName)")
+        print("✅ Drum kit sounds loaded: \(kit)")
     }
         
     /// Stop all sounds

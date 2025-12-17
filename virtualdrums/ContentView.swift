@@ -43,7 +43,7 @@ struct ContentView: View {
 }
 
 /// Reusable drum kit button component
-struct DrumKitButton: View {
+private struct DrumKitButton: View {
     let kit: DrumKit
     let appState: AppState
     let openImmersiveSpace: OpenImmersiveSpaceAction
@@ -51,7 +51,7 @@ struct DrumKitButton: View {
     var body: some View {
         Button {
             Task {
-                appState.selectedDrumKitName = kit.id
+                appState.selectedDrumKit = kit.id
                 if !appState.isImmersiveSpaceOpen {
                     await openImmersiveSpace(id: "drum-volume")
                 }
@@ -75,28 +75,37 @@ struct DrumKitButton: View {
         }
     }
 }
-struct DrumKit: Identifiable {
-    let id: String
+
+enum DrumKitID: String, CaseIterable, Identifiable {
+    case bite
+    case kick
+    case squeeze
+
+    var id: String { rawValue }
+}
+
+private struct DrumKit: Identifiable {
+    let id: DrumKitID
     let label: String
     let description: String
     
     // Bite Kit - Aggressive drum sounds
     static let bite = DrumKit(
-        id: "bite",
+        id: .bite,
         label: "Bite Kit",
         description: "Aggressive, punchy drum sounds"
     )
     
     // Kick Kit - Deep, powerful drum sounds
     static let kick = DrumKit(
-        id: "kick",
+        id: .kick,
         label: "Kick Kit",
         description: "Deep, powerful drum sounds"
     )
     
     // Squeeze Kit - Tight, compressed drum sounds
     static let squeeze = DrumKit(
-        id: "squeeze",
+        id: .squeeze,
         label: "Squeeze Kit",
         description: "Tight, compressed drum sounds"
     )

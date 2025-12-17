@@ -12,9 +12,9 @@ import Combine
 /// Shared app state for passing data between scenes
 @MainActor
 class AppState: ObservableObject {
-    @Published var selectedDrumKitName: String = "bite" {
+    @Published var selectedDrumKit: DrumKitID = .bite {
         didSet {
-            AudioEngine.shared.setDrumKit(kitName: selectedDrumKitName)
+            AudioEngine.shared.setDrumKit(kit: selectedDrumKit)
         }
     }
     @Published var isImmersiveSpaceOpen: Bool = false

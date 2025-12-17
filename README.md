@@ -74,15 +74,11 @@ Located in `soundkit`.
 Files must be named: `[soundkit-name]_target_[drum-piece-name]`
 Example: `bite_target_hi_hat`
 
+* Currently we have 3 sound kits
+    * bite
+    * kick
+    * squeeze
 * Each sound kit currently contains 8 sounds
 * Every soundkit must have a sound for each drum piece.
 
-
-
-
-
-
-
-
-
-
+The drum kits are defined in `ContentView.swift` under `DrumKitID`.
