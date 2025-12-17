@@ -33,7 +33,9 @@ struct DrumVolumeView: View {
     var body: some View {
         ZStack {
             RealityView { content in
+                #if !targetEnvironment(simulator)
                 await setupDrumSticks(content: content)
+                #endif // !targetEnvironment(simulator)
                 await setupDrumKit(content: content)
                 await setupCollisions(content: content)
             }
