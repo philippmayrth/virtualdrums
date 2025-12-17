@@ -22,7 +22,7 @@ struct StickConfig {
     static let tipRadius: Float = 0.0075
 }
 
-struct DrumVolumeView: View {
+struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
     @State private var drumController = DrumController()
     @State private var leftStickState: StickState?
@@ -236,6 +236,6 @@ struct DrumVolumeView: View {
 // MARK: Preview
 
 #Preview {
-    DrumVolumeView()
+    ImmersiveView()
         .environmentObject(AppState())
 }

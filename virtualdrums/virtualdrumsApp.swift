@@ -12,21 +12,18 @@ struct virtualdrumsApp: App {
     @StateObject private var appState = AppState()
     
     var body: some Scene {
+        
         WindowGroup {
-            ContentView()
+            ContentTabView()
                 .environmentObject(appState)
         }
         .windowResizability(.contentSize)
         
         ImmersiveSpace(id: "drum-volume") {
-            DrumVolumeView()
+            ImmersiveView()
                 .environmentObject(appState)
-                .onAppear {
-                    appState.isImmersiveSpaceOpen = true
-                }
-                .onDisappear {
-                    appState.isImmersiveSpaceOpen = false
-                }
+                .onAppear { appState.isImmersiveSpaceOpen = true }
+                .onDisappear { appState.isImmersiveSpaceOpen = false }
         }
     }
 }

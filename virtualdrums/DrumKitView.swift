@@ -9,7 +9,7 @@ import SwiftUI
 import RealityKit
 import RealityKitContent
 
-struct ContentView: View {
+struct DrumKitView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
 
@@ -17,7 +17,7 @@ struct ContentView: View {
         VStack(spacing: 30) {
             
             VStack {
-                Text("Drum Sound Kits")
+                Text("Sound Kits")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
@@ -115,6 +115,6 @@ private struct DrumKit: Identifiable {
 }
 
 #Preview(windowStyle: .automatic) {
-    ContentView()
+    DrumKitView()
         .environmentObject(AppState())
 }
