@@ -34,11 +34,55 @@ Files in the `external` dir require external software to open/edit. Those files 
 
 Files for the app icon can be found in the `icon` dir. There are two types. Prefixed with `App` are used inside of Xcode and prefixed with `Marketing` can be used on App Store Connect. There are @1 and @2 available for most. The background icon for use in the app is exported as JPG not as PNG like all others, that is becuase XCode otherwise throws an error due to alpha channel being present in that image.
 
-### Drum Sounds
+## DrumKit
 
-Found in `soundkit`. All files are prefixed with the name of the drum kit sound they represent. There are currently 8 sounds per soundkit.
+* [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution)
+* [Drum Kit](https://skfb.ly/oZroJ) (CC Attribution)
 
-### DrumKit
+A **drum kit model** is provided as a `.usdz` file and can be imported as an `Entity`.
+Each `.usdz` file may contain multiple drum pieces, **each with its own separate mesh**.
+When imported, every drum piece becomes a `ModelEntity` that is a child of the root `Entity`.
 
-- [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution) 
-- [drum kit](https://skfb.ly/oZroJ) (CC Attribution)
+### Naming Convention
+
+Each drum piece **must** follow this naming format: `target-[drum-piece-name]`
+**Example:** `target_mid_tom`
+
+* `target`: used to identify valid collision targets.
+* `[drum-piece-name]`: used as the drum ID to trigger the correct sound.
+
+### Editing `.usdz` in Blender
+
+1. Import the `.usdz` file into Blender
+2. Edit as needed
+3. Export as **Universal Scene Description (.usd*)**
+4. Rename the exported file from `.usdc` to `.usdz`
+
+Some models may lose their materials during import. If that happens, this workflow has proven reliable:
+
+1. Drag the `.usdz` file into Blender
+2. In the import popup, enable **Import All Materials**
+3. Export as `.glb`
+4. Open the exported file in **macOS Preview**
+5. Preview converts it to `.usdz`.
+6. Export `.usdz` file from Preview app
+
+## Drum Sounds
+
+Located in `soundkit`.
+
+Files must be named: `[soundkit-name]_target_[drum-piece-name]`
+Example: `bite_target_hi_hat`
+
+* Each sound kit currently contains 8 sounds
+* Every soundkit must have a sound for each drum piece.
+
+
+
+
+
+
+
+
+
+

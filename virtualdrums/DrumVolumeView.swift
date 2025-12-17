@@ -24,9 +24,7 @@ struct StickConfig {
 
 struct DrumVolumeView: View {
     @EnvironmentObject var appState: AppState
-    @State private var drumController: DrumController?
-    @State private var message: String = "Touch a drum to play!"
-    @State private var isSetup = false
+    @State private var drumController = DrumController()
     @State private var leftStickState: StickState?
     @State private var rightStickState: StickState?
     @State private var collisionsOfLeftStick: EventSubscription?
@@ -35,89 +33,21 @@ struct DrumVolumeView: View {
     var body: some View {
         ZStack {
             RealityView { content in
-                if !isSetup {
-                    setupController()
-                    isSetup = true
-                }
 
                 await setupDrumSticks(content: content)
                 await setupDrumKit(content: content)
                 await setupCollisions(content: content)
             }
-            .gesture(
-                SpatialTapGesture()
-                    .targetedToAnyEntity()
-                    .onEnded { value in
-                        handleDrumTap(entity: value.entity)
-                    }
-            )
-            .ignoresSafeArea()
-        }
-        .overlay(
-            VStack {
-                Text(message)
-                    .font(.title2)
-                    .padding(8)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                
-                if let controller = drumController, controller.hitCount > 0 {
-                    Text("Hits: \(controller.hitCount)")
-                        .font(.caption)
-                        .padding(4)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                
-                if let controller = drumController, !controller.audioEngine.failedSounds.isEmpty {
-                    Text("⚠️ Missing: \(controller.audioEngine.failedSounds.joined(separator: ", "))")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
-                        .padding(4)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                
-                if let controller = drumController {
-                    Text("Kit: \(controller.drumKit.name)")
-                        .font(.caption)
-                        .padding(4)
-                        .background(.blue.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            .padding(),
-            alignment: .top
-        )
-        .onChange(of: appState.selectedDrumKitName) { _, newKitName in
-            changeDrumKit(to: newKitName)
+            //            .gesture(
+            //                SpatialTapGesture()
+            //                    .targetedToAnyEntity()
+            //                    .onEnded { value in
+            //                        handleDrumTap(entity: value.entity)
+            //                    }
+            //            )
         }
     }
     
-
-    // MARK: Drum Controller
-    
-    private func setupController() {
-        let selectedKit = DrumKit.kit(named: appState.selectedDrumKitName)
-        let controller = DrumController(drumKit: selectedKit, maxPolyphony: 8)
-        controller.setup()
-        self.drumController = controller
-        print("🎵 Loaded drum kit: \(selectedKit.name)")
-    }
-    
-    private func changeDrumKit(to kitName: String) {
-        guard let controller = drumController else {
-            setupController()
-            return
-        }
-        
-        let newKit = DrumKit.kit(named: kitName)
-        controller.drumKit = newKit
-        controller.setup()
-        
-        message = "Switched to \(kitName)"
-        print("Switched drum kit to \(kitName)")
-    }
     
     // MARK: Drum Entities
     
@@ -132,9 +62,9 @@ struct DrumVolumeView: View {
         }
         
         drumKitEntity.position = [0, 0.15, -0.6] // Position the drum infront of the user
-                
+        
         await setupTargetsRecursively(from: drumKitEntity)
-                            
+        
         content.add(drumKitEntity)
         print("🥁 Drum kit setup complete!")
     }
@@ -142,7 +72,7 @@ struct DrumVolumeView: View {
     private func setupTargetsRecursively(from entity: Entity) async {
         for child in entity.children {
             if let model = child as? ModelEntity,
-                model.name.starts(with: "target_"){
+               model.name.starts(with: "target_"){
                 await setupDrum(drum: model)
             }
             
@@ -166,6 +96,7 @@ struct DrumVolumeView: View {
             )
         )
         
+        AudioEngine.shared.loadDrumSound(drumName: drum.name)
         print ("Drum set up: ", drum.name)
     }
 
@@ -230,10 +161,10 @@ struct DrumVolumeView: View {
         let handleMesh = MeshResource.generateCylinder(height: StickConfig.handleLength, radius: StickConfig.handleRadius)
         let handleMaterial = SimpleMaterial(color: .brown, isMetallic: false)
         let handleModel = ModelEntity(mesh: handleMesh, materials: [handleMaterial])
-                
+        
         handleModel.name = "stick_handle_\(chirality)"
         handleModel.position.y = StickConfig.handleLength / 2
-            
+        
         return handleModel
     }
     
@@ -241,7 +172,7 @@ struct DrumVolumeView: View {
         let tipMesh = MeshResource.generateSphere(radius: StickConfig.tipRadius)
         let tipMaterial = SimpleMaterial(color: .white, isMetallic: false)
         let tipModel = ModelEntity(mesh: tipMesh, materials: [tipMaterial])
-                
+        
         tipModel.name = "stick_tip_\(chirality)"
         tipModel.position.y = StickConfig.handleLength
         tipModel.scale.y = 1.2
@@ -265,7 +196,7 @@ struct DrumVolumeView: View {
         let rotationZSign: Float = (chirality == .left) ? -1 : 1 // Mirror for left hand
         let rotationZ = simd_quatf(angle: rotationZSign * .pi / 2.2, axis: [0, 0, 1])
         stick.orientation = rotationX * rotationZ
-                
+        
         let anchor = AnchorEntity(
             .hand(chirality, location: .palm),
             trackingMode: .continuous,
@@ -294,37 +225,41 @@ struct DrumVolumeView: View {
     }
     
     private func handleCollision(event: CollisionEvents.Began) {
-        print("Collision with: ", event.entityB.name)
+        let name = event.entityB.name
+         print("Collision with:", name)
         
-        
+        if (name.hasPrefix("target_")) {
+            drumController.hitDrum(drum: name)
+        }
     }
     
-    /// Method that hitting drums via click gesture (used for Simulator)
-    private func handleDrumTap(entity: Entity) {
-        guard let controller = drumController else { return }
-        
-        var currentEntity: Entity? = entity
-        var drumId: String? = nil
-        
-        while currentEntity != nil && drumId == nil {
-            drumId = controller.getDrumIdFromEntity(name: currentEntity!.name)
-            currentEntity = currentEntity?.parent
-        }
-        
-        if let drumId = drumId {
-            let velocity: Float = Float.random(in: 0.7...1.0)
-            controller.hitDrum(id: drumId, velocity: velocity)
-            
-            if let piece = controller.getDrumPiece(id: drumId) {
-                message = "🥁 \(piece.name) played!"
-            }
-            
-            print("🎵 \(drumId) - velocity: \(velocity)")
-        } else {
-            message = "Tapped: \(entity.name)"
-            print("⚠️ Unknown: \(entity.name)")
-        }
-    }
+/// Method that hitting drums via click gesture (used for Simulator)
+//    private func handleDrumTap(entity: Entity) {
+//        guard let controller = drumController else { return }
+//
+//        var currentEntity: Entity? = entity
+//        var drumId: String? = nil
+//
+//        while currentEntity != nil && drumId == nil {
+//            drumId = controller.getDrumIdFromEntity(name: currentEntity!.name)
+//            currentEntity = currentEntity?.parent
+//        }
+//
+//        if let drumId = drumId {
+//            let velocity: Float = Float.random(in: 0.7...1.0)
+//            controller.hitDrum(id: drumId, velocity: velocity)
+//
+//            if let piece = controller.getDrumPiece(id: drumId) {
+//                message = "🥁 \(piece.name) played!"
+//            }
+//
+//            print("🎵 \(drumId) - velocity: \(velocity)")
+//        } else {
+//            message = "Tapped: \(entity.name)"
+//            print("⚠️ Unknown: \(entity.name)")
+//        }
+//    }
+    
 }
 
 // MARK: Preview

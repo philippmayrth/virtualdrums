@@ -26,40 +26,16 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
                     .fontWeight(.medium)
             }
-            
             // Drum kit selection buttons
             VStack() {
-                DrumKitButton(
-                    kitName: "bite",
-                    kit: DrumKit.bite,
-                    appState: appState,
-                    openImmersiveSpace: openImmersiveSpace
-                )
-                
-                DrumKitButton(
-                    kitName: "kick",
-                    kit: DrumKit.kick,
-                    appState: appState,
-                    openImmersiveSpace: openImmersiveSpace
-                )
-                
-                DrumKitButton(
-                    kitName: "squeeze",
-                    kit: DrumKit.squeeze,
-                    appState: appState,
-                    openImmersiveSpace: openImmersiveSpace
-                )
+                ForEach(DrumKit.all) { kit in
+                    DrumKitButton(
+                        kit: kit,
+                        appState: appState,
+                        openImmersiveSpace: openImmersiveSpace
+                    )
+                }
             }
-
-//            // Preview
-//            Model3D(named: "DrumKit_Named", bundle: .main)
-//                .frame(width: 250, height: 250)
-            
-//            Text("Tap a drum kit to enter VR")
-//                .font(.caption)
-//                .foregroundColor(.secondary)
-//                .padding(.bottom, 20)
-
         }
         .padding(60)
         .fixedSize()
@@ -68,7 +44,6 @@ struct ContentView: View {
 
 /// Reusable drum kit button component
 struct DrumKitButton: View {
-    let kitName: String
     let kit: DrumKit
     let appState: AppState
     let openImmersiveSpace: OpenImmersiveSpaceAction
@@ -76,7 +51,7 @@ struct DrumKitButton: View {
     var body: some View {
         Button {
             Task {
-                appState.selectedDrumKitName = kitName
+                appState.selectedDrumKitName = kit.id
                 if !appState.isImmersiveSpaceOpen {
                     await openImmersiveSpace(id: "drum-volume")
                 }
@@ -86,7 +61,7 @@ struct DrumKitButton: View {
                 Text("🥁")
                     .font(.system(size: 40))
                 VStack(alignment: .leading) {
-                    Text(kit.name)
+                    Text(kit.label)
                         .font(.title2)
                         .fontWeight(.semibold)
                     HStack {
@@ -94,15 +69,40 @@ struct DrumKitButton: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("\(kit.pieces.count) drums")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.trailing, 25)
                     }
                 }
             }
         }
     }
+}
+struct DrumKit: Identifiable {
+    let id: String
+    let label: String
+    let description: String
+    
+    // Bite Kit - Aggressive drum sounds
+    static let bite = DrumKit(
+        id: "bite",
+        label: "Bite Kit",
+        description: "Aggressive, punchy drum sounds"
+    )
+    
+    // Kick Kit - Deep, powerful drum sounds
+    static let kick = DrumKit(
+        id: "kick",
+        label: "Kick Kit",
+        description: "Deep, powerful drum sounds"
+    )
+    
+    // Squeeze Kit - Tight, compressed drum sounds
+    static let squeeze = DrumKit(
+        id: "squeeze",
+        label: "Squeeze Kit",
+        description: "Tight, compressed drum sounds"
+    )
+    
+    /// Collection for looping
+    static let all: [DrumKit] = [.bite, .kick, .squeeze]
 }
 
 #Preview(windowStyle: .automatic) {
