@@ -29,6 +29,18 @@ class DrumController: ObservableObject {
         print("🥁 Hit drum: \(drum.rawValue)")
         AudioEngine.shared.playSound(drum: drum)
     }
+
+    func hitHiHat(isOpen: Bool) {
+        if isOpen {
+            AudioEngine.shared.playSound(drum: .target_hi_hat)
+        } else {
+            // Placeholder so open/closed is audible even without separate samples.
+            AudioEngine.shared.playSound(drum: .target_bass_drum)
+        }
+    }
+
+    func closeHiHat() {
+        AudioEngine.shared.stopDrum(drum: .target_hi_hat)
+    }
     
 }
-

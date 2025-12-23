@@ -11,28 +11,39 @@ struct ContentTabView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        TabView {
-            DrumSetView()
-                .environmentObject(appState)
-                .tabItem {
-                    Label {
-                        Text("Drums")
-                    } icon: {
-                        Image("drum_set")
+        ZStack {
+            TabView {
+                DrumSetView()
+                    .environmentObject(appState)
+                    .tabItem {
+                        Label {
+                            Text("Drums")
+                        } icon: {
+                            Image("drum_set")
+                        }
                     }
-                }
-            
-            DrumKitView()
+
+                DrumKitView()
+                    .environmentObject(appState)
+                    .tabItem {
+                        Label("Sounds", systemImage: "music.note.square.stack.fill")
+                    }
+
+                CreditsView()
+                    .environmentObject(appState)
+                    .tabItem {
+                        Label("Credits", systemImage: "info.circle")
+                    }
+#if targetEnvironment(simulator)
+                SimulatorDebugTab()
+                    .environmentObject(appState)
+                    .tabItem {
+                        Label("Debug", systemImage: "ladybug")
+                    }
+#endif // targetEnvironment(simulator)
+            }
+            KeyboardCaptureOverlay()
                 .environmentObject(appState)
-                .tabItem {
-                    Label("Sounds", systemImage: "music.note.square.stack.fill")
-                }
-            
-            CreditsView()
-                .environmentObject(appState)
-                .tabItem {
-                    Label("Credits", systemImage: "info.circle")
-                }
         }
     }
 }

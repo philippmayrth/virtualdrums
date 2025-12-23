@@ -51,6 +51,23 @@ struct DrumSetView: View {
                     .foregroundColor(.secondary)
                     .fontWeight(.medium)
             }
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(
+                    "Tastur Eingabe",
+                    isOn: Binding(
+                        get: { appState.keyboardInputMode == .textField },
+                        set: { appState.keyboardInputMode = $0 ? .textField : .hardware }
+                    )
+                )
+                .toggleStyle(.switch)
+                Text(keyboardModeHint)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text("Hi-Hat Pedal: \(appState.hiHatPedalIsClosed ? "closed" : "open")")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: 420, alignment: .leading)
             // Drum set selection buttons
             VStack() {
                 ForEach(DrumSet.all) { set in
@@ -63,6 +80,15 @@ struct DrumSetView: View {
             }
         }
         .padding(60)
+    }
+
+    private var keyboardModeHint: String {
+        switch appState.keyboardInputMode {
+        case .hardware:
+            return "Hardware keyboard (no on-screen keyboard). Space = bass drum, H = hi-hat hit, F = hi-hat pedal (toggle)."
+        case .textField:
+            return "Textfeld aktiv (on-screen keyboard). Space = bass drum, H = hi-hat hit, F = hi-hat pedal (toggle)."
+        }
     }
 }
 

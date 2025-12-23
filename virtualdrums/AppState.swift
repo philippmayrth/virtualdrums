@@ -15,6 +15,19 @@ class AppState: ObservableObject {
     @Published var selectedDrumKit: DrumKitID = .bite
     @Published var selectedDrumSet: DrumSetID = .burgundy_drum
     @Published var isImmersiveSpaceOpen: Bool = false
+    @Published var keyboardInputMode: KeyboardInputMode = {
+        #if targetEnvironment(simulator)
+        return .textField
+        #else
+        return .hardware
+        #endif
+    }()
+    @Published var keyboardKickTriggerToken: Int = 0
+    @Published var keyboardHiHatTriggerToken: Int = 0
+    @Published var hiHatPedalIsClosed: Bool = true
+#if targetEnvironment(simulator)
+    @Published var simulator = SimulatorState()
+#endif // targetEnvironment(simulator)
     
     /// Stores Combine subscriptions to keep them alive
     private var cancellables = Set<AnyCancellable>()
@@ -30,5 +43,13 @@ class AppState: ObservableObject {
             }
             // Store the subscription so it stays active for the lifetime of AppState
             .store(in: &cancellables)
+
+#if targetEnvironment(simulator)
+        simulator.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+#endif // targetEnvironment(simulator)
     }
 }

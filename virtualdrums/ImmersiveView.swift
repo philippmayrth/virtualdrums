@@ -13,7 +13,18 @@ extension CollisionGroup {
 /// (can be extended later with velocity, hit state, etc.)
 struct StickState {
     var stickEntity: Entity
-    var collidingEntity: EventSource
+    var collidingEntity: Entity
+}
+
+private struct HitPair: Hashable {
+    let stickID: ObjectIdentifier
+    let drumName: String
+}
+
+private struct HitLock {
+    let drumName: String
+    let point: SIMD3<Float>
+    let normal: SIMD3<Float>
 }
 
 struct StickConfig {
@@ -24,31 +35,47 @@ struct StickConfig {
 
 struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
-    @State private var drumController = DrumController()
+    @State var drumController = DrumController()
     @State private var leftStickState: StickState?
     @State private var rightStickState: StickState?
-    @State private var collisionSubscriptions: [EventSubscription] = []
+    @State private var updateSubscription: EventSubscription?
+    @State var stickLastPosition: [ObjectIdentifier: SIMD3<Float>] = [:]
+    @State private var activeHitPairs: Set<HitPair> = []
+    @State private var hitLocks: [ObjectIdentifier: HitLock] = [:]
     @State private var rootDrumEntity = Entity()
+#if targetEnvironment(simulator)
+    @State var simulatorStickState: StickState?
+    @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
+    @State var simulatorSweepTask: Task<Void, Never>?
+#endif // targetEnvironment(simulator)
     // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
     
     var body: some View {
         ZStack {
             RealityView { content in
-                #if !targetEnvironment(simulator)
+                #if targetEnvironment(simulator)
+                await setupSimulatorStick(content: content)
+                #else
                 await setupDrumSticks(content: content)
-                #endif // !targetEnvironment(simulator)
+                #endif // targetEnvironment(simulator)
                 
                 await setupDrumSet(drumSet: appState.selectedDrumSet)
                 content.add(rootDrumEntity)
 
-                await setupCollisions(content: content)
+                setupStickTracking(content: content)
             }
             #if targetEnvironment(simulator)
             .gesture(
                 SpatialTapGesture()
                     .targetedToAnyEntity()
                     .onEnded { value in
-                        handleDrumClick(entity: value.entity)
+                        let local = value.location3D
+                        let localPosition = SIMD3<Float>(Float(local.x), Float(local.y), Float(local.z))
+                        let worldPosition = resolveTapWorldPosition(
+                            entity: value.entity,
+                            location: localPosition
+                        )
+                        handleDrumClick(entity: value.entity, worldPosition: worldPosition)
                     }
             )
             #endif // targetEnvironment(simulator)
@@ -56,9 +83,33 @@ struct ImmersiveView: View {
         .onChange(of: appState.selectedDrumSet, { oldSetID, newSetID in
             Task {
                 await removeDrumSet(drumSet: oldSetID)
+                activeHitPairs.removeAll()
                 await setupDrumSet(drumSet: newSetID)
             }
         })
+        .onChange(of: appState.keyboardKickTriggerToken, { _, _ in
+            drumController.hitDrum(drum: .target_bass_drum)
+        })
+        .onChange(of: appState.keyboardHiHatTriggerToken, { _, _ in
+            drumController.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
+        })
+        .onChange(of: appState.hiHatPedalIsClosed, { _, isClosed in
+            if isClosed {
+                drumController.closeHiHat()
+            }
+        })
+        #if targetEnvironment(simulator)
+        .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
+            let delta = appState.simulator.simulatorStickMoveDelta
+            moveSimulatorStick(dx: delta.x, dy: delta.y, dz: delta.z)
+        })
+        .onChange(of: appState.simulator.simulatorStickResetToken, { _, _ in
+            resetSimulatorStick()
+        })
+        .onChange(of: appState.simulator.simulatorStickSweepToken, { _, _ in
+            startSimulatorSweep(at: simulatorStickPosition)
+        })
+        #endif // targetEnvironment(simulator)
     }
     
     
@@ -80,7 +131,7 @@ struct ImmersiveView: View {
             print("❌ Failed to load drum set model: \(error)")
             return
         }
-        
+
         drumSetEntity.name = drumSet.rawValue
         drumSetEntity.position = [0, 0.15, -0.6] // Position the drum infront of the user
         
@@ -115,6 +166,11 @@ struct ImmersiveView: View {
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
+        #if targetEnvironment(simulator)
+        entity.components.set(
+            PhysicsBodyComponent(massProperties: .default, material: .default, mode: .static)
+        )
+        #endif // targetEnvironment(simulator)
         
         #if targetEnvironment(simulator)
         entity.components.set(InputTargetComponent())
@@ -217,38 +273,120 @@ struct ImmersiveView: View {
         return anchor
     }
 
-    // MARK: Collision Detection
+    private func setupStickTracking(content: RealityViewContent) {
+        guard updateSubscription == nil else { return }
 
-    private func setupCollisions(content: RealityViewContent) async {
-        [leftStickState?.collidingEntity, rightStickState?.collidingEntity]
-            .compactMap{ $0 }
-            .forEach { stick in
-                let sub = content.subscribe(
-                    to: CollisionEvents.Began.self,
-                    on: stick
-                ) { event in handleCollision(event: event) }
-
-                collisionSubscriptions.append(sub)
+        updateSubscription = content.subscribe(to: SceneEvents.Update.self) { _ in
+            var sticks = [
+                leftStickState?.collidingEntity,
+                rightStickState?.collidingEntity
+            ].compactMap { $0 }
+            #if targetEnvironment(simulator)
+            if let simulatorStick = simulatorStickState?.collidingEntity {
+                sticks.append(simulatorStick)
             }
-    }
-    
-    private func handleCollision(event: CollisionEvents.Began) {
-        let name = event.entityB.name
-         print("Collision with:", name)
-        
-        if let drumId = DrumID(rawValue: name) {
-            drumController.hitDrum(drum: drumId)
+            #endif // targetEnvironment(simulator)
+
+            processRaycastHits(sticks: sticks)
+
+            sticks.forEach { stick in
+                stickLastPosition[ObjectIdentifier(stick)] = stick.position(relativeTo: nil)
+            }
         }
     }
-    
-    #if targetEnvironment(simulator)
-    /// Method for hitting drums via click gesture (used for Simulator)
-    private func handleDrumClick(entity: Entity) {
-        if let drumId = DrumID(rawValue: entity.name) {
-            drumController.hitDrum(drum: drumId)
+
+    private func processRaycastHits(sticks: [Entity]) {
+        guard let scene = rootDrumEntity.scene else { return }
+        let worldUp: SIMD3<Float> = [0, 1, 0]
+        let normalThreshold: Float = 0.2
+        let dirThreshold: Float = -0.1
+        let releaseMargin: Float = StickConfig.tipRadius
+
+        for stick in sticks {
+            let stickID = ObjectIdentifier(stick)
+            let current = stick.position(relativeTo: nil)
+            let last = stickLastPosition[stickID] ?? current
+            let delta = current - last
+            let deltaLen = simd_length(delta)
+            let dir = deltaLen == 0 ? SIMD3<Float>(0, 0, 0) : (delta / deltaLen)
+
+            let hits = scene.raycast(from: last, to: current, query: .nearest, mask: .drum, relativeTo: nil)
+            if let lock = hitLocks[stickID], let hit = hits.first {
+                if hit.entity.name != lock.drumName {
+                    hitLocks.removeValue(forKey: stickID)
+                    activeHitPairs.remove(HitPair(stickID: stickID, drumName: lock.drumName))
+                }
+            }
+
+            if let lock = hitLocks[stickID] {
+                let normal = simd_length(lock.normal) == 0 ? SIMD3<Float>(0, 1, 0) : simd_normalize(lock.normal)
+                let distance = simd_dot(current - lock.point, normal)
+
+                if distance <= releaseMargin {
+                    updateDebugHitCheck(
+                        drumName: lock.drumName,
+                        stickName: stick.name,
+                        result: "blocked: inside"
+                    )
+                    continue
+                }
+
+                hitLocks.removeValue(forKey: stickID)
+                activeHitPairs.remove(HitPair(stickID: stickID, drumName: lock.drumName))
+            }
+
+            if let hit = hits.first, DrumID(rawValue: hit.entity.name) != nil {
+                updateDebugCollision(drumEntity: hit.entity, stickEntity: stick)
+
+                if deltaLen == 0 {
+                    updateDebugHitCheck(
+                        drumName: hit.entity.name,
+                        stickName: stick.name,
+                        result: "rejected: no movement"
+                    )
+                } else {
+                    let normalDot = simd_dot(hit.normal, worldUp)
+                    let dirDot = simd_dot(dir, worldUp)
+
+                    if normalDot > normalThreshold && dirDot < dirThreshold {
+                        let hitPair = HitPair(stickID: stickID, drumName: hit.entity.name)
+                        if !activeHitPairs.contains(hitPair) {
+                            activeHitPairs.insert(hitPair)
+                            let drumID = DrumID(rawValue: hit.entity.name)!
+                            if drumID == .target_hi_hat {
+                                drumController.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
+                            } else {
+                                drumController.hitDrum(drum: drumID)
+                            }
+                            updateDebugHitAccepted(drumName: hit.entity.name)
+                        }
+                        hitLocks[stickID] = HitLock(
+                            drumName: hit.entity.name,
+                            point: hit.position,
+                            normal: hit.normal
+                        )
+                        updateDebugHitCheck(
+                            drumName: hit.entity.name,
+                            stickName: stick.name,
+                            result: "hit accepted"
+                        )
+                    } else {
+                        updateDebugHitCheck(
+                            drumName: hit.entity.name,
+                            stickName: stick.name,
+                            result: normalDot <= normalThreshold ? "rejected: side hit" : "rejected: not moving down"
+                        )
+                    }
+                }
+            } else {
+                updateDebugHitCheck(
+                    drumName: "-",
+                    stickName: stick.name,
+                    result: "raycast miss"
+                )
+            }
         }
     }
-    #endif // targetEnvironment(simulator)
     
 }
 
