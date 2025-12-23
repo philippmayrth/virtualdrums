@@ -79,14 +79,16 @@ The prefix ensures we can validate the collision target and the drum piece suffi
 3. Export as **Universal Scene Description (.usd*)**
 4. Rename the exported file from `.usdc` to `.usdz`
 
-Some models may lose their materials during import. If that happens, this workflow has proven reliable:
+#### Important: Axis Orientation
 
-1. Drag the `.usdz` file into Blender
-2. In the import popup, enable **Import All Materials**
-3. Export as `.glb`
-4. Open the exported file in **macOS Preview**
-5. Preview converts it to `.usdz`.
-6. Export `.usdz` file from Preview app
+We compare the raycast hit normal (strike direction) with the UP vector of the drum piece. Therefore the drum face (piece that should be hit) must point up!
+
+Blender uses **Z-up**, while RealityKit uses **Y-up**. Because of this difference, models often need axis conversion before they can be used correctly in RealityKit.
+An easy option is to **use Reality Composer Pro**:
+
+1. Open the `.usdz` file in Reality Composer Pro.
+2. In the *Layer Data* card, set the **Up Axis** to **Z**.
+3. Export the corrected `.usdz` file.
 
 ## Drum Sound Kits
 
