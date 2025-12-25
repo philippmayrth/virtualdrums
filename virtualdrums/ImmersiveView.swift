@@ -9,11 +9,11 @@ extension CollisionGroup {
     static let stickTipRight = CollisionGroup(rawValue: 1 << 2)
 }
 
-/// Runtime state for a single drum stick
-/// (can be extended later with velocity, hit state, etc.)
 struct StickState {
-    var stickEntity: Entity
-    var collidingEntity: EventSource
+    let stickEntity: Entity
+    let tipEntity: Entity
+    var lastTipPosition: SIMD3<Float>?
+    var isInsideDrum: Bool = false // Prevents multiple hits while inside the drum
 }
 
 struct StickConfig {
@@ -27,7 +27,7 @@ struct ImmersiveView: View {
     @State private var drumController = DrumController()
     @State private var leftStick: StickState?
     @State private var rightStick: StickState?
-    @State private var collisionSubscriptions: [EventSubscription] = []
+    @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
     // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
     
@@ -41,7 +41,7 @@ struct ImmersiveView: View {
                 await setupDrumSet(drumSet: appState.selectedDrumSet)
                 content.add(rootDrumEntity)
 
-                await setupCollisions(content: content)
+                await setupUpdateLoop(content: content)
             }
             #if targetEnvironment(simulator)
             // add a click-to-hit gesture for the simulator
@@ -159,7 +159,7 @@ struct ImmersiveView: View {
         let anchor: AnchorEntity = positionStickInHand(stick: stick, chirality: chirality)
         content.add(anchor)
 
-        return StickState(stickEntity: stick, collidingEntity: tip)
+        return StickState(stickEntity: stick, tipEntity: tip)
     }
 
     private func makeStickHandle(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
@@ -210,27 +210,77 @@ struct ImmersiveView: View {
         return anchor
     }
 
-    // MARK: Collision Detection
+    // MARK: Update Loop + Raycasting
 
-    private func setupCollisions(content: RealityViewContent) async {
-        [leftStick?.collidingEntity, rightStick?.collidingEntity]
-            .compactMap{ $0 }
-            .forEach { stick in
-                let sub = content.subscribe(
-                    to: CollisionEvents.Began.self,
-                    on: stick
-                ) { event in handleCollision(event: event) }
-
-                collisionSubscriptions.append(sub)
-            }
+    private func setupUpdateLoop(content: RealityViewContent) async {
+        updateSub = content.subscribe(to: SceneEvents.Update.self) { event in
+            processStrike(stick: &leftStick, deltaTime: Float(event.deltaTime))
+            processStrike(stick: &rightStick, deltaTime: Float(event.deltaTime))
+        }
     }
-    
-    private func handleCollision(event: CollisionEvents.Began) {
-        let name = event.entityB.name
-         print("Collision with:", name)
-        
-        if let drumId = DrumID(rawValue: name) {
-            drumController.hitDrum(drum: drumId)
+
+    private func processStrike(stick: inout StickState?, deltaTime: Float ) {
+        guard var s = stick else { return }
+
+        let tipPosition = s.tipEntity.position(relativeTo: nil)
+        guard let lastPosition = s.lastTipPosition else {
+            // no lastPosition = first update loop → set current position as last and return
+            s.lastTipPosition = tipPosition
+            stick = s
+            return
+        }
+
+        let strikeVelocity: SIMD3<Float> = (tipPosition - lastPosition) / deltaTime
+        let strikeSpeed: Float = simd_length(strikeVelocity)
+        let strikeDirection = normalize(tipPosition - lastPosition)
+        let strikeDistance = distance(tipPosition, lastPosition)
+
+        let minSpeed: Float = 0.3
+        if (strikeSpeed < minSpeed) {
+            return
+        }
+
+        guard let scene = stick?.tipEntity.scene else { return }
+        let hits = scene.raycast(
+            origin: lastPosition,
+            direction: strikeDirection,
+            length: strikeDistance,
+            query: .nearest,
+            mask: .drum,
+        )
+
+        processRaycastHits(s: &s, hits: hits)
+
+        s.lastTipPosition = tipPosition
+        stick = s
+    }
+
+    private func processRaycastHits(s: inout StickState, hits: [CollisionCastHit]) {
+        if let hit = hits.first {
+
+            // Get the entity UP vector (direction of the drum surface)
+            let transform = hit.entity.transformMatrix(relativeTo: nil)
+            let entityUp = normalize(SIMD3<Float>(
+                transform.columns.2.x,
+                transform.columns.2.y,
+                transform.columns.2.z
+            ))
+
+            // Checks if the strike was directed at the top (drum) surface (≈ within 45° of up)
+            let isTopHit = dot(hit.normal, entityUp) > 0.7
+            if isTopHit && !s.isInsideDrum,
+               let drumId = DrumID(rawValue: hit.entity.name) {
+                // stick hit against the up/drum side --> mark stick as inside and play sound
+                s.isInsideDrum = true
+                drumController.hitDrum(drum: drumId)
+            }
+            else {
+                // stick hit a drum, but not against the up/drum side --> mark stick as inside the drum, to not trigger false hits
+                s.isInsideDrum = true
+            }
+        } else {
+            // no hits detected --> mark stick as outside the drum, to enable new hits
+            s.isInsideDrum = false
         }
     }
     
