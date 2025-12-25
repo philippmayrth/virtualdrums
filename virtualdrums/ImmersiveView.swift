@@ -25,8 +25,8 @@ struct StickConfig {
 struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
     @State private var drumController = DrumController()
-    @State private var leftStickState: StickState?
-    @State private var rightStickState: StickState?
+    @State private var leftStick: StickState?
+    @State private var rightStick: StickState?
     @State private var collisionSubscriptions: [EventSubscription] = []
     @State private var rootDrumEntity = Entity()
     // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
@@ -44,11 +44,14 @@ struct ImmersiveView: View {
                 await setupCollisions(content: content)
             }
             #if targetEnvironment(simulator)
+            // add a click-to-hit gesture for the simulator
             .gesture(
                 SpatialTapGesture()
                     .targetedToAnyEntity()
                     .onEnded { value in
-                        handleDrumClick(entity: value.entity)
+                        if let drumId = DrumID(rawValue: value.entity.name) {
+                            drumController.hitDrum(drum: drumId)
+                        }
                     }
             )
             #endif // targetEnvironment(simulator)
@@ -105,7 +108,7 @@ struct ImmersiveView: View {
         do {
             colliderShape = try await .generateConvex(from: entity.model!.mesh)
         } catch {
-            print("⚠️ collider shape could not be generated from mesh. using box instead")
+            print("⚠️ collider shape could not be generated from mesh!")
             return
         }
         
@@ -129,62 +132,52 @@ struct ImmersiveView: View {
     /// Creates both drum sticks
     @MainActor
     private func setupDrumSticks(content: RealityViewContent) async {
-        self.leftStickState = setupStick(chirality: .left, content: content)
-        self.rightStickState = setupStick(chirality: .right, content: content)
+        self.leftStick = setupStick(chirality: .left, content: content)
+        self.rightStick = setupStick(chirality: .right, content: content)
     }
     
     /// Creates a single stick and anchors it to the given hand.
     private func setupStick(chirality: AnchoringComponent.Target.Chirality, content: RealityViewContent) -> StickState {
-        let (stickEntity, collidingEntity) = makeStick(chirality: chirality)
-        let anchor: AnchorEntity = positionStickInHand(stick: stickEntity, chirality: chirality)
-        content.add(anchor)
-        return StickState(stickEntity: stickEntity, collidingEntity: collidingEntity)
-    }
-    
-    /// Builds the full stick entity including handle, tip, and collision setup
-    private func makeStick(chirality: AnchoringComponent.Target.Chirality) -> (Entity, Entity) {
-        let tip = makeTipEntity(chirality: chirality)
-        let handle = makeHandleEntity(chirality: chirality)
-        let stickEntity = Entity()
-        stickEntity.addChild(tip)
-        stickEntity.addChild(handle)
+        let tip = makeStickTip(chirality: chirality)
+        let handle = makeStickHandle(chirality: chirality)
+        let stick = Entity()
+        stick.addChild(tip)
+        stick.addChild(handle)
         
-        // Enables system input and collision event routing.
+        // Needed for Collision Detection and Raycasting.
         // This also propagates to child entities that contain meshes.
-        stickEntity.components.set(InputTargetComponent())
+        stick.components.set(InputTargetComponent())
         
         // Promote the tip’s collision configuration to the root stick entity
-        stickEntity.components.set(
+        stick.components.set(
             CollisionComponent(
                 shapes: tip.collision!.shapes,
                 filter: tip.collision!.filter
             )
         )
 
-        return (stickEntity, tip)
-    }
-    
-    private func makeHandleEntity(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
-        let handleMesh = MeshResource.generateCylinder(height: StickConfig.handleLength, radius: StickConfig.handleRadius)
-        let handleMaterial = SimpleMaterial(color: .brown, isMetallic: false)
-        let handleModel = ModelEntity(mesh: handleMesh, materials: [handleMaterial])
-        
-        handleModel.name = "stick_handle_\(chirality)"
-        handleModel.position.y = StickConfig.handleLength / 2
-        
-        return handleModel
-    }
-    
-    func makeTipEntity(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
-        let tipMesh = MeshResource.generateSphere(radius: StickConfig.tipRadius)
-        let tipMaterial = SimpleMaterial(color: .white, isMetallic: false)
-        let tipModel = ModelEntity(mesh: tipMesh, materials: [tipMaterial])
-        
-        tipModel.name = "stick_tip_\(chirality)"
-        tipModel.position.y = StickConfig.handleLength
-        tipModel.scale.y = 1.2
+        let anchor: AnchorEntity = positionStickInHand(stick: stick, chirality: chirality)
+        content.add(anchor)
 
-        tipModel.components.set(
+        return StickState(stickEntity: stick, collidingEntity: tip)
+    }
+
+    private func makeStickHandle(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
+        let mesh = MeshResource.generateCylinder(height: StickConfig.handleLength, radius: StickConfig.handleRadius)
+        let material = SimpleMaterial(color: .brown, isMetallic: false)
+        let model = ModelEntity(mesh: mesh, materials: [material])
+        model.position.y = StickConfig.handleLength / 2
+        return model
+    }
+
+    func makeStickTip(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
+        let mesh = MeshResource.generateSphere(radius: StickConfig.tipRadius)
+        let material = SimpleMaterial(color: .white, isMetallic: false)
+        let model = ModelEntity(mesh: mesh, materials: [material])
+        model.position.y = StickConfig.handleLength
+        model.scale.y = 1.2
+        
+        model.components.set(
             CollisionComponent(
                 shapes: [.generateSphere(radius: StickConfig.tipRadius)],
                 // Only collides with entities in the "drum" collision group
@@ -192,7 +185,7 @@ struct ImmersiveView: View {
             )
         )
         
-        return tipModel
+        return model
     }
     
     /// Positions and orients the stick to match a realistic hand grip,
@@ -220,7 +213,7 @@ struct ImmersiveView: View {
     // MARK: Collision Detection
 
     private func setupCollisions(content: RealityViewContent) async {
-        [leftStickState?.collidingEntity, rightStickState?.collidingEntity]
+        [leftStick?.collidingEntity, rightStick?.collidingEntity]
             .compactMap{ $0 }
             .forEach { stick in
                 let sub = content.subscribe(
@@ -240,15 +233,6 @@ struct ImmersiveView: View {
             drumController.hitDrum(drum: drumId)
         }
     }
-    
-    #if targetEnvironment(simulator)
-    /// Method for hitting drums via click gesture (used for Simulator)
-    private func handleDrumClick(entity: Entity) {
-        if let drumId = DrumID(rawValue: entity.name) {
-            drumController.hitDrum(drum: drumId)
-        }
-    }
-    #endif // targetEnvironment(simulator)
     
 }
 
