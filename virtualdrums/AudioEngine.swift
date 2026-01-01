@@ -7,6 +7,7 @@
 
 import AVFAudio
 import Combine
+import Foundation
 
 final class AudioEngine: ObservableObject {
 
@@ -31,7 +32,12 @@ final class AudioEngine: ObservableObject {
         self.loadDrumKit(kit: kit)
     }
     
-    func playSound(drum: DrumID) {
+    func playSound(
+        drum: DrumID,
+        volume: Float? = nil,
+        pitch: Float? = nil,
+        stopAfter: Double? = nil
+    ) {
         guard let players = audioPlayers[drum], !players.isEmpty else {
             print("⚠️ No audio player available for drum: \(drum)")
             return
@@ -45,15 +51,27 @@ final class AudioEngine: ObservableObject {
         currentPlayerIndex[drum] = (index + 1) % players.count
         
         // Add random variation to voluem and pitch (TODO: use real velocity and hit position)
-        let volume = 1 + randomOffset(volumeJitter)
-        player.volume = volume
-        let pitch = 1 +  randomOffset(pitchJitter)
-        player.rate = pitch
+        let baseVolume = volume ?? 1
+        let jitteredVolume = baseVolume + randomOffset(volumeJitter)
+        player.volume = jitteredVolume
+        let basePitch = pitch ?? 1
+        let jitteredPitch = basePitch + randomOffset(pitchJitter)
+        player.rate = jitteredPitch
         
         // Reset to beginning and play
         player.currentTime = 0
         player.play()
-        print("🎶 Playing sound \(drum) - volume: \(volume), pitch: \(pitch)")
+        if let stopAfter {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stopAfter) {
+                player.stop()
+            }
+        }
+        print("🎶 Playing sound \(drum) - volume: \(jitteredVolume), pitch: \(jitteredPitch)")
+    }
+
+    func stopDrum(drum: DrumID) {
+        guard let players = audioPlayers[drum] else { return }
+        players.forEach { $0.stop() }
     }
     
     /// Load a single sound with polyphony support
