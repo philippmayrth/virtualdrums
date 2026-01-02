@@ -24,6 +24,10 @@ enum DrumID: String, CaseIterable {
 /// Main controller for the drum system
 class DrumController: ObservableObject {
     
+    init(appState: AppState) {
+        appState.drumController = self
+    }
+    
     /// Handle a drum hit with velocity detection
     func hitDrum(drum: DrumID) {
         print("🥁 Hit drum: \(drum.rawValue)")

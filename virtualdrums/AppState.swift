@@ -16,6 +16,7 @@ class AppState: ObservableObject {
     @Published var selectedDrumSet: DrumSetID = .burgundy_drum
     @Published var isImmersiveSpaceOpen: Bool = false
 
+    @Published var drumController: DrumController?
     @Published var keyboardKickTriggerToken: Int = 0
     @Published var keyboardHiHatTriggerToken: Int = 0
     @Published var hiHatPedalIsClosed: Bool = true

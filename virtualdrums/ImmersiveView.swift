@@ -24,7 +24,7 @@ struct StickConfig {
 
 struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
-    @State private var drumController = DrumController()
+    @State private var drumController: DrumController?
     @State private var leftStick: StickState?
     @State private var rightStick: StickState?
     @State private var updateSub: EventSubscription?
@@ -34,6 +34,8 @@ struct ImmersiveView: View {
     var body: some View {
         ZStack {
             RealityView { content in
+                drumController = DrumController(appState: appState)
+                
                 #if !targetEnvironment(simulator)
                 await setupDrumSticks(content: content)
                 #endif // !targetEnvironment(simulator)
@@ -51,9 +53,9 @@ struct ImmersiveView: View {
                     .onEnded { value in
                         if let drumId = DrumID(rawValue: value.entity.name) {
                             if drumId == .target_hi_hat {
-                                drumController.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
+                                drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
                             } else {
-                                drumController.hitDrum(drum: drumId)
+                                drumController?.hitDrum(drum: drumId)
                             }
                         }
                     }
@@ -67,14 +69,14 @@ struct ImmersiveView: View {
             }
         })
         .onChange(of: appState.keyboardKickTriggerToken, { _, _ in
-            drumController.hitDrum(drum: .target_bass_drum)
+            drumController? .hitDrum(drum: .target_bass_drum)
         })
         .onChange(of: appState.keyboardHiHatTriggerToken, { _, _ in
-            drumController.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
+            drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
         })
         .onChange(of: appState.hiHatPedalIsClosed, { _, isClosed in
             if isClosed {
-                drumController.closeHiHat()
+                drumController?.closeHiHat()
             }
         })
     }
@@ -288,9 +290,9 @@ struct ImmersiveView: View {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
                 if drumId == .target_hi_hat {
-                    drumController.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
+                    drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
                 } else {
-                    drumController.hitDrum(drum: drumId)
+                    drumController?.hitDrum(drum: drumId)
                 }
             }
             else {
