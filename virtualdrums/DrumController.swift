@@ -16,7 +16,10 @@ enum DrumID: String, CaseIterable {
     case target_floor_tom
     case target_mid_tom
     case target_high_tom
-    case target_hi_hat
+    case target_hi_hat // generic input
+    case target_hi_hat_open
+    case target_hi_hat_closed
+    case target_hi_hat_pedal // pedal is pressed down
     case target_ride
     case target_crash
 }
@@ -24,32 +27,28 @@ enum DrumID: String, CaseIterable {
 /// Main controller for the drum system
 class DrumController: ObservableObject {
     
+    private var isHiHatClosed: Bool = false
+    
     init(appState: AppState) {
         appState.drumController = self
     }
     
     /// Handle a drum hit with velocity detection
     func hitDrum(drum: DrumID) {
-        print("🥁 Hit drum: \(drum.rawValue)")
-        AudioEngine.shared.playSound(drum: drum)
-    }
-
-    
-    func hitHiHat(isOpen: Bool) {
-        if isOpen {
-            AudioEngine.shared.playSound(drum: .target_hi_hat)
-        } else {
-            // Placeholder so open/closed is audible even without separate samples.
-            AudioEngine.shared.playSound(drum: .target_bass_drum)
-        }
+        let soundToPlay: DrumID =
+                drum == .target_hi_hat
+                ? (isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
+                : drum
+        
+        print("🥁 Hit drum: \(soundToPlay.rawValue)")
+        AudioEngine.shared.playSound(drum: soundToPlay)
     }
     
     func toggleHiHat() {
-        print("toggle")
+        isHiHatClosed = !isHiHatClosed
+        if isHiHatClosed {
+            AudioEngine.shared.playSound(drum: .target_hi_hat_pedal)
+            AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
+        }
     }
-
-    func closeHiHat() {
-        AudioEngine.shared.stopDrum(drum: .target_hi_hat)
-    }
-    
 }

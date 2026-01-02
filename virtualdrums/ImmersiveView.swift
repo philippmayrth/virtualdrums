@@ -51,13 +51,8 @@ struct ImmersiveView: View {
                 SpatialTapGesture()
                     .targetedToAnyEntity()
                     .onEnded { value in
-                        if let drumId = DrumID(rawValue: value.entity.name) {
-                            if drumId == .target_hi_hat {
-                                drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
-                            } else {
-                                drumController?.hitDrum(drum: drumId)
-                            }
-                        }
+                        guard let drumId = DrumID(rawValue: value.entity.name) else { return }
+                        drumController?.hitDrum(drum: drumId)
                     }
             )
             #endif // targetEnvironment(simulator)
@@ -66,17 +61,6 @@ struct ImmersiveView: View {
             Task {
                 await removeDrumSet(drumSet: oldSetID)
                 await setupDrumSet(drumSet: newSetID)
-            }
-        })
-        .onChange(of: appState.keyboardKickTriggerToken, { _, _ in
-            drumController? .hitDrum(drum: .target_bass_drum)
-        })
-        .onChange(of: appState.keyboardHiHatTriggerToken, { _, _ in
-            drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
-        })
-        .onChange(of: appState.hiHatPedalIsClosed, { _, isClosed in
-            if isClosed {
-                drumController?.closeHiHat()
             }
         })
     }
@@ -289,11 +273,7 @@ struct ImmersiveView: View {
                let drumId = DrumID(rawValue: hit.entity.name) {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
-                if drumId == .target_hi_hat {
-                    drumController?.hitHiHat(isOpen: !appState.hiHatPedalIsClosed)
-                } else {
-                    drumController?.hitDrum(drum: drumId)
-                }
+                drumController?.hitDrum(drum: drumId)
             }
             else {
                 // stick hit a drum, but not against the up/drum side --> mark stick as inside the drum, to not trigger false hits

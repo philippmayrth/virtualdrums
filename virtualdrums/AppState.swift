@@ -17,9 +17,6 @@ class AppState: ObservableObject {
     @Published var isImmersiveSpaceOpen: Bool = false
 
     @Published var drumController: DrumController?
-    @Published var keyboardKickTriggerToken: Int = 0
-    @Published var keyboardHiHatTriggerToken: Int = 0
-    @Published var hiHatPedalIsClosed: Bool = true
     
     /// Stores Combine subscriptions to keep them alive
     private var cancellables = Set<AnyCancellable>()
