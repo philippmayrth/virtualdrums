@@ -105,3 +105,40 @@ Example: `bite_target_hi_hat`
 * Every soundkit must have a sound for each drum piece.
 
 The drum kits are defined in `ContentView.swift` under `DrumKitID`.
+
+## Identifizierte Einschränkungen (Vision Pro 1, visionOS 26.0)
+
+### 1. Einschränkungen der Fußinteraktion
+
+* **Keine native Fußerkennung in RealityKit**
+  RealityKit stellt derzeit keine Fußerkennung bereit. Dadurch ist eine Umsetzung von Fußpedalen (z. B. Bassdrum oder Hi-Hat) über Bilderkennung nicht möglich.
+
+* **Kein Zugriff auf Kamerabilddaten**
+  Der fehlende Zugriff auf das Rohbildmaterial der Kameras verhindert eine eigenständige Implementierung einer Fußerkennung.
+
+* **Limitierte Eingabealternativen**
+
+  * **Tastatur-Input** ist nur eingeschränkt nutzbar, da er Fokus benötigt, welcher häufig von anderen UI-Elementen belegt oder reserviert ist.
+  * **SwiftUI Commands** benötigen zwar keinen Fokus, liefern jedoch keine Unterscheidung zwischen *Key Down* und *Key Press* Events. Diese Differenzierung ist jedoch essenziell, z. B. für die korrekte Abbildung eines Hi-Hat-Pedals.
+  * **Simulation über einen Custom Game Controller** ist technisch möglich, stellt jedoch für Endnutzer keine praktikable Lösung dar.
+
+### 2. Einschränkungen der Handerfassung
+
+* Da das Spielen vollständig auf der Handerfassung basiert, müssen sich die Hände jederzeit im Sichtfeld der Kameras befinden.
+
+  * Verdeckungen einer Hand durch die andere führen zu Erkennungsproblemen.
+  * Trommeln, die außerhalb des Kamerasichtfelds platziert sind, können nicht zuverlässig bespielt werden.
+
+### 3. Fehlendes haptisches Feedback
+
+* Es existiert keinerlei physische Rückmeldung (Haptik oder Widerstand) bei erfolgreichen Schlägen, was das Spielgefühl deutlich von einem realen Instrument unterscheidet.
+
+### 4. Limitierungen der Kollisionsdetektion in RealityKit
+
+* **Eingeschränkte Kollisionsinformationen**
+  Die native Collision Detection von RealityKit liefert, für an die Hand befestigte Entities, keine Informationen über die Richtung der Kollision oder die Aufprallgeschwindigkeit (Velocity).
+  Dadurch ist sie nicht ausreichend geeignet, um ausschließlich Schläge auf das Trommelfell zu erkennen oder die Schlagsstärke realistisch zu berechnen.
+  Kollisionen werden nicht kontinuierlich geprüft. Bei schnellen Bewegungen kann dies zu *Tunneling*-Effekten führen, bei denen Kollisionen vollständig verpasst werden.
+
+* **Alternative Lösung**
+  Eine manuelle Velocity-Berechnung in Kombination mit Raycasts aus RealityKit stellt eine deutlich zuverlässigere Alternative dar und liefert in der Praxis bessere Ergebnisse.
