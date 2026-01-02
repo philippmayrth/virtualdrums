@@ -15,12 +15,12 @@ struct FootPedalCommands: Commands {
         CommandGroup(after: .newItem) {
 
             Button("Bass Drum Hit") {
-                appState.drumController?.hitDrum(drum: .target_bass_drum)
+                appState.drumController?.hitDrum(drum: .target_bass_drum, strikeSpeed: nil)
             }
             .keyboardShortcut(.space, modifiers: [])
 
             Button("Hi-Hat Hit") {
-                appState.drumController?.hitDrum(drum: .target_hi_hat)
+                appState.drumController?.hitDrum(drum: .target_hi_hat, strikeSpeed: nil)
             }
             .keyboardShortcut(.return, modifiers: [])
             

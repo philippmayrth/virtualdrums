@@ -24,20 +24,13 @@ final class AudioEngine: ObservableObject {
     private var currentPlayerIndex: [DrumID: Int] = [:]
     private let maxPolyphony: Int
     private var selectedDrumKit: DrumKitID?
-    let volumeJitter: Float = 0.04   // ±4%
-    let pitchJitter: Float = 0.015   // ±1.5%
     
     func setDrumKit(kit: DrumKitID) {
         self.selectedDrumKit = kit
         self.loadDrumKit(kit: kit)
     }
     
-    func playSound(
-        drum: DrumID,
-        volume: Float? = nil,
-        pitch: Float? = nil,
-        stopAfter: Double? = nil
-    ) {
+    func playSound(drum: DrumID, volume: Float = 1, pitch: Float = 1) {
         guard let players = audioPlayers[drum], !players.isEmpty else {
             print("⚠️ No audio player available for drum: \(drum)")
             return
@@ -49,24 +42,15 @@ final class AudioEngine: ObservableObject {
         
         // Update index for next hit
         currentPlayerIndex[drum] = (index + 1) % players.count
-        
-        // Add random variation to voluem and pitch (TODO: use real velocity and hit position)
-        let baseVolume = volume ?? 1
-        let jitteredVolume = baseVolume + randomOffset(volumeJitter)
-        player.volume = jitteredVolume
-        let basePitch = pitch ?? 1
-        let jitteredPitch = basePitch + randomOffset(pitchJitter)
-        player.rate = jitteredPitch
+                
+        player.volume = volume
+        player.rate = pitch
         
         // Reset to beginning and play
         player.currentTime = 0
         player.play()
-        if let stopAfter {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stopAfter) {
-                player.stop()
-            }
-        }
-        print("🎶 Playing sound \(drum) - volume: \(jitteredVolume), pitch: \(jitteredPitch)")
+        
+        print("🎶 Playing sound \(drum) - volume: \(volume), pitch: \(pitch)")
     }
 
     func stopDrum(drum: DrumID) {
@@ -149,9 +133,5 @@ final class AudioEngine: ObservableObject {
         for players in audioPlayers.values {
             players.forEach { $0.stop() }
         }
-    }
-    
-    func randomOffset(_ amount: Float) -> Float {
-        Float.random(in: -amount...amount)
     }
 }

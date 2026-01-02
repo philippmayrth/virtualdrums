@@ -45,14 +45,20 @@ class DrumController: ObservableObject {
     }
     
     /// Handle a drum hit with velocity detection
-    func hitDrum(drum: DrumID) {
+    func hitDrum(drum: DrumID, strikeSpeed: Float?) {
         let soundToPlay: DrumID =
                 drum == .target_hi_hat
                 ? (isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
                 : drum
         
+        if (strikeSpeed != nil) {
+            let volume: Float = calculateVolume(forSpeed: strikeSpeed!)
+            AudioEngine.shared.playSound(drum: soundToPlay, volume: volume)
+        } else {
+            AudioEngine.shared.playSound(drum: soundToPlay)
+        }
+   
         print("🥁 Hit drum: \(soundToPlay.rawValue)")
-        AudioEngine.shared.playSound(drum: soundToPlay)
     }
     
     func toggleHiHat() {
@@ -61,5 +67,19 @@ class DrumController: ObservableObject {
             AudioEngine.shared.playSound(drum: .target_hi_hat_pedal)
             AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
         }
+    }
+    
+    private func calculateVolume(forSpeed speed: Float) -> Float {
+        let minSpeed: Float = 0.1
+        let maxSpeed: Float = 15.0
+
+        let clampedSpeed = min(max(speed, minSpeed), maxSpeed)
+        let normalized = (clampedSpeed - minSpeed) / (maxSpeed - minSpeed)
+
+        let minVolume: Float = 0.1
+        let maxVolume: Float = 3
+
+        let volume = minVolume + normalized * (maxVolume - minVolume)
+        return volume
     }
 }

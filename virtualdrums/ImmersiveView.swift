@@ -52,7 +52,7 @@ struct ImmersiveView: View {
                     .targetedToAnyEntity()
                     .onEnded { value in
                         guard let drumId = DrumID(rawValue: value.entity.name) else { return }
-                        drumController?.hitDrum(drum: drumId)
+                        drumController?.hitDrum(drum: drumId, strikeSpeed: nil)
                     }
             )
             #endif // targetEnvironment(simulator)
@@ -250,13 +250,13 @@ struct ImmersiveView: View {
             mask: .drum,
         )
 
-        processRaycastHits(s: &s, hits: hits)
+        processRaycastHits(s: &s, hits: hits, strikeSpeed: strikeSpeed)
 
         s.lastTipPosition = tipPosition
         stick = s
     }
 
-    private func processRaycastHits(s: inout StickState, hits: [CollisionCastHit]) {
+    private func processRaycastHits(s: inout StickState, hits: [CollisionCastHit], strikeSpeed: Float) {
         if let hit = hits.first {
 
             // Get the entity UP vector (direction of the drum surface)
@@ -273,7 +273,7 @@ struct ImmersiveView: View {
                let drumId = DrumID(rawValue: hit.entity.name) {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
-                drumController?.hitDrum(drum: drumId)
+                drumController?.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
             }
             else {
                 // stick hit a drum, but not against the up/drum side --> mark stick as inside the drum, to not trigger false hits
