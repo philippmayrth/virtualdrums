@@ -27,6 +27,15 @@ struct ContentTabView: View {
                 .tabItem {
                     Label("Sounds", systemImage: "music.note.square.stack.fill")
                 }
+            
+            FootPedalView()
+                .tabItem {
+                    Label {
+                        Text("Foot Pedals")
+                    } icon: {
+                        Image("foot_pedal")
+                    }
+                }
 
             CreditsView()
                 .environmentObject(appState)
