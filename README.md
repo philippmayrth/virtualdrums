@@ -142,3 +142,11 @@ The drum kits are defined in `ContentView.swift` under `DrumKitID`.
 
 * **Alternative Lösung**
   Eine manuelle Velocity-Berechnung in Kombination mit Raycasts aus RealityKit stellt eine deutlich zuverlässigere Alternative dar und liefert in der Praxis bessere Ergebnisse.
+
+### 5. Audio Latenz
+
+* **Erhöhte Audio-Latenz bei externen Bluetooth-Audiogeräten**
+  Bei der Audioausgabe über externe Bluetooth-Lautsprecher bzw. Kopfhörer (z. B. AirPods Pro) tritt eine deutlich wahrnehmbare Latenz im Vergleich zu den integrierten Lautsprechern der Vision Pro auf. Diese Verzögerung beeinträchtigt das Nutzererlebnis erheblich.
+
+* **Keine kabelgebundene Alternative**
+  visionOS bietet derzeit keine Möglichkeit, kabelgebundene Audiogeräte anzuschließen. Somit existiert keine Low-Latency-Alternative zur Bluetooth-Audioausgabe, wodurch die Latenz nicht zuverlässig reduziert oder umgangen werden kann.
