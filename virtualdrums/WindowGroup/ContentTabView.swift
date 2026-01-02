@@ -33,6 +33,14 @@ struct ContentTabView: View {
                 .tabItem {
                     Label("Credits", systemImage: "info.circle")
                 }
+
+            #if targetEnvironment(simulator)
+            SimulatorDebugTab()
+                .environmentObject(appState)
+                .tabItem {
+                    Label("Debug", systemImage: "ladybug")
+                }
+            #endif // targetEnvironment(simulator)
         }
     }
 }

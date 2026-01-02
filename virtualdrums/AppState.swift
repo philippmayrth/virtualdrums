@@ -18,6 +18,10 @@ class AppState: ObservableObject {
 
     @Published var drumController: DrumController?
     
+    #if targetEnvironment(simulator)
+    @Published var simulator = SimulatorState()
+    #endif // targetEnvironment(simulator)
+    
     /// Stores Combine subscriptions to keep them alive
     private var cancellables = Set<AnyCancellable>()
     
@@ -32,5 +36,13 @@ class AppState: ObservableObject {
             }
             // Store the subscription so it stays active for the lifetime of AppState
             .store(in: &cancellables)
+
+        #if targetEnvironment(simulator)
+        simulator.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+        #endif // targetEnvironment(simulator)
     }
 }

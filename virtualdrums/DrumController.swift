@@ -27,7 +27,7 @@ enum DrumID: String, CaseIterable {
 /// Main controller for the drum system
 class DrumController: ObservableObject {
     
-    private var isHiHatClosed: Bool = false
+    public var isHiHatClosed: Bool = false
     
     init(appState: AppState) {
         appState.drumController = self

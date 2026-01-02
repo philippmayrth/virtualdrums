@@ -29,6 +29,11 @@ struct ImmersiveView: View {
     @State private var rightStick: StickState?
     @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
+#if targetEnvironment(simulator)
+    @State var simulatorStickState: StickState?
+    @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
+    @State var simulatorSweepTask: Task<Void, Never>?
+#endif // targetEnvironment(simulator)
     // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
     
     var body: some View {
@@ -36,9 +41,11 @@ struct ImmersiveView: View {
             RealityView { content in
                 drumController = DrumController(appState: appState)
                 
-                #if !targetEnvironment(simulator)
+                #if targetEnvironment(simulator)
+                await setupSimulatorStick(content: content)
+                #else
                 await setupDrumSticks(content: content)
-                #endif // !targetEnvironment(simulator)
+                #endif // targetEnvironment(simulator)
                 
                 await setupDrumSet(drumSet: appState.selectedDrumSet)
                 content.add(rootDrumEntity)
@@ -53,6 +60,11 @@ struct ImmersiveView: View {
                     .onEnded { value in
                         guard let drumId = DrumID(rawValue: value.entity.name) else { return }
                         drumController?.hitDrum(drum: drumId, strikeSpeed: nil)
+                        
+                        let local = value.location3D
+                        let localPosition = SIMD3<Float>(Float(local.x), Float(local.y), Float(local.z))
+                        let worldPosition = resolveTapWorldPosition( entity: value.entity, location: localPosition )
+                        startSimulatorSweep(at: worldPosition)
                     }
             )
             #endif // targetEnvironment(simulator)
@@ -63,6 +75,18 @@ struct ImmersiveView: View {
                 await setupDrumSet(drumSet: newSetID)
             }
         })
+        #if targetEnvironment(simulator)
+        .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
+            let delta = appState.simulator.simulatorStickMoveDelta
+            moveSimulatorStick(dx: delta.x, dy: delta.y, dz: delta.z)
+        })
+        .onChange(of: appState.simulator.simulatorStickResetToken, { _, _ in
+            resetSimulatorStick()
+        })
+        .onChange(of: appState.simulator.simulatorStickSweepToken, { _, _ in
+            startSimulatorSweep(at: simulatorStickPosition)
+        })
+        #endif // targetEnvironment(simulator)
     }
     
     
@@ -119,6 +143,11 @@ struct ImmersiveView: View {
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
+        #if targetEnvironment(simulator)
+        entity.components.set(
+            PhysicsBodyComponent(massProperties: .default, material: .default, mode: .static)
+        )
+        #endif // targetEnvironment(simulator)
         
         #if targetEnvironment(simulator)
         entity.components.set(InputTargetComponent())
@@ -217,6 +246,10 @@ struct ImmersiveView: View {
         updateSub = content.subscribe(to: SceneEvents.Update.self) { event in
             processStrike(stick: &leftStick, deltaTime: Float(event.deltaTime))
             processStrike(stick: &rightStick, deltaTime: Float(event.deltaTime))
+            
+            #if targetEnvironment(simulator)
+            processStrike(stick: &simulatorStickState, deltaTime: Float(event.deltaTime))
+            #endif // targetEnvironment(simulator)
         }
     }
 
@@ -259,6 +292,10 @@ struct ImmersiveView: View {
     private func processRaycastHits(s: inout StickState, hits: [CollisionCastHit], strikeSpeed: Float) {
         if let hit = hits.first {
 
+            #if targetEnvironment(simulator)
+            updateDebugCollision(drumEntity: hit.entity, stickEntity: s.stickEntity)
+            #endif // targetEnvironment(simulator)
+
             // Get the entity UP vector (direction of the drum surface)
             let transform = hit.entity.transformMatrix(relativeTo: nil)
             let entityUp = normalize(SIMD3<Float>(
@@ -274,10 +311,17 @@ struct ImmersiveView: View {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
                 drumController?.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
-            }
-            else {
+                
+                #if targetEnvironment(simulator)
+                updateDebugHitAccepted(drumName: hit.entity.name)
+                #endif // targetEnvironment(simulator)
+            } else {
                 // stick hit a drum, but not against the up/drum side --> mark stick as inside the drum, to not trigger false hits
                 s.isInsideDrum = true
+
+                #if targetEnvironment(simulator)
+                updateDebugHitCheck(drumName: hit.entity.name, stickName: s.stickEntity.name, result: "hit rejected (not top hit or already inside)")
+                #endif // targetEnvironment(simulator)
             }
         } else {
             // no hits detected --> mark stick as outside the drum, to enable new hits
