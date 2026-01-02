@@ -92,32 +92,4 @@ struct KeyboardCaptureOverlay: View {
 
         textBuffer = ""
     }
-
-    private func keyLabel(for press: KeyPress) -> String {
-        if press.characters == " " {
-            return "space"
-        }
-        if !press.characters.isEmpty {
-            return press.characters
-        }
-        return String(describing: press.key)
-    }
-
-    private func modifiersLabel(for modifiers: EventModifiers) -> String {
-        var parts: [String] = []
-        if modifiers.contains(.command) { parts.append("cmd") }
-        if modifiers.contains(.shift) { parts.append("shift") }
-        if modifiers.contains(.option) { parts.append("opt") }
-        if modifiers.contains(.control) { parts.append("ctrl") }
-        if modifiers.contains(.capsLock) { parts.append("caps") }
-        return parts.isEmpty ? "-" : parts.joined(separator: "+")
-    }
-
-    private func phaseLabel(for phases: KeyPress.Phases) -> String {
-        var parts: [String] = []
-        if phases.contains(.down) { parts.append("down") }
-        if phases.contains(.repeat) { parts.append("repeat") }
-        if phases.contains(.up) { parts.append("up") }
-        return parts.isEmpty ? "-" : parts.joined(separator: "+")
-    }
 }
