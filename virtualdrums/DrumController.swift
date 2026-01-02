@@ -43,6 +43,10 @@ class DrumController: ObservableObject {
             AudioEngine.shared.playSound(drum: .target_bass_drum)
         }
     }
+    
+    func toggleHiHat() {
+        print("toggle")
+    }
 
     func closeHiHat() {
         AudioEngine.shared.stopDrum(drum: .target_hi_hat)
