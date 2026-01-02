@@ -15,13 +15,7 @@ class AppState: ObservableObject {
     @Published var selectedDrumKit: DrumKitID = .bite
     @Published var selectedDrumSet: DrumSetID = .burgundy_drum
     @Published var isImmersiveSpaceOpen: Bool = false
-    @Published var keyboardInputMode: KeyboardInputMode = {
-        #if targetEnvironment(simulator)
-        return .textField
-        #else
-        return .hardware
-        #endif
-    }()
+
     @Published var keyboardKickTriggerToken: Int = 0
     @Published var keyboardHiHatTriggerToken: Int = 0
     @Published var hiHatPedalIsClosed: Bool = true
