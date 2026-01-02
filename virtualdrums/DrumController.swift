@@ -33,6 +33,17 @@ class DrumController: ObservableObject {
         appState.drumController = self
     }
     
+    func loadDrum(drum: DrumID) {
+        if (drum == .target_hi_hat) {
+            AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_open)
+            AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_closed)
+            AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_pedal)
+            return
+        }
+        
+        AudioEngine.shared.loadDrumSound(drum: drum)
+    }
+    
     /// Handle a drum hit with velocity detection
     func hitDrum(drum: DrumID) {
         let soundToPlay: DrumID =

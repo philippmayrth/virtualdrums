@@ -124,7 +124,7 @@ struct ImmersiveView: View {
         entity.components.set(InputTargetComponent())
         #endif // targetEnvironment(simulator)
         
-        AudioEngine.shared.loadDrumSound(drum: DrumID(rawValue: entity.name)!)
+        drumController?.loadDrum(drum: DrumID(rawValue: entity.name)!)
         print ("✅ Drum piece set up: ", entity.name)
     }
     
