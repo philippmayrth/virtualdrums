@@ -146,11 +146,6 @@ struct ImmersiveView: View {
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
-        #if targetEnvironment(simulator)
-        entity.components.set(
-            PhysicsBodyComponent(massProperties: .default, material: .default, mode: .static)
-        )
-        #endif // targetEnvironment(simulator)
         
         #if targetEnvironment(simulator)
         entity.components.set(InputTargetComponent())
