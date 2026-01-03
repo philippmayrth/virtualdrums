@@ -31,7 +31,7 @@ struct ContentTabView: View {
             FootPedalView()
                 .tabItem {
                     Label {
-                        Text("Foot Pedals")
+                        Text("Pedals")
                     } icon: {
                         Image("foot_pedal")
                     }

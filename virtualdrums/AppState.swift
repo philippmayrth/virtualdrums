@@ -16,8 +16,6 @@ class AppState: ObservableObject {
     @Published var selectedDrumSet: DrumSetID = .burgundy_drum
     @Published var isImmersiveSpaceOpen: Bool = false
 
-    @Published var drumController: DrumController?
-    
     #if targetEnvironment(simulator)
     @Published var simulator = SimulatorState()
     #endif // targetEnvironment(simulator)

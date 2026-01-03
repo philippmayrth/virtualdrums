@@ -18,13 +18,14 @@ struct StickState {
 
 struct StickConfig {
     static let handleLength: Float = 0.25
-    static let handleRadius: Float = 0.005
-    static let tipRadius: Float = 0.0075
+    static let handleRadius: Float = 0.004
+    static let tipRadius: Float = 0.005
 }
 
 struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
-    @State private var drumController: DrumController?
+    @StateObject private var pedals = FootPedalManager.shared
+    @StateObject private var drumController = DrumController.shared
     @State private var leftStick: StickState?
     @State private var rightStick: StickState?
     @State private var updateSub: EventSubscription?
@@ -39,7 +40,6 @@ struct ImmersiveView: View {
     var body: some View {
         ZStack {
             RealityView { content in
-                drumController = DrumController(appState: appState)
                 
                 #if targetEnvironment(simulator)
                 await setupSimulatorStick(content: content)
@@ -59,7 +59,7 @@ struct ImmersiveView: View {
                     .targetedToAnyEntity()
                     .onEnded { value in
                         guard let drumId = DrumID(rawValue: value.entity.name) else { return }
-                        drumController?.hitDrum(drum: drumId, strikeSpeed: nil)
+                        drumController.hitDrum(drum: drumId, strikeSpeed: nil)
                         
                         let local = value.location3D
                         let localPosition = SIMD3<Float>(Float(local.x), Float(local.y), Float(local.z))
@@ -74,6 +74,9 @@ struct ImmersiveView: View {
                 await removeDrumSet(drumSet: oldSetID)
                 await setupDrumSet(drumSet: newSetID)
             }
+        })
+        .onChange(of: pedals.hiHatPedalDistance, {_, newDistance in
+            // TODO: adjust model distance of top and bottom cymbal halves
         })
         #if targetEnvironment(simulator)
         .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
@@ -153,7 +156,7 @@ struct ImmersiveView: View {
         entity.components.set(InputTargetComponent())
         #endif // targetEnvironment(simulator)
         
-        drumController?.loadDrum(drum: DrumID(rawValue: entity.name)!)
+        drumController.loadDrum(drum: DrumID(rawValue: entity.name)!)
         print ("✅ Drum piece set up: ", entity.name)
     }
     
@@ -310,7 +313,7 @@ struct ImmersiveView: View {
                let drumId = DrumID(rawValue: hit.entity.name) {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
-                drumController?.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
+                drumController.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
                 
                 #if targetEnvironment(simulator)
                 updateDebugHitAccepted(drumName: hit.entity.name)

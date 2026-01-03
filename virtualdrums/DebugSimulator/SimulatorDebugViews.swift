@@ -33,7 +33,7 @@ private struct SimulatorDebugPanel: View {
             Text("Drum: \(appState.simulator.simDebugLastDrum)")
             Text("Stick: \(appState.simulator.simDebugLastStick)")
             Text("Key: \(appState.simulator.simDebugLastKey)")
-            Text("Hi-Hat is: \((appState.drumController?.isHiHatClosed ?? false) ? "closed" : "open")")
+            Text("Hi-Hat is: \(FootPedalManager.shared.isHiHatClosed ? "closed" : "open")")
             Text("Hit Count: \(appState.simulator.simDebugHitCount)")
         }
         .font(.caption)

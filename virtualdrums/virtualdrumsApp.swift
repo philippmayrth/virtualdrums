@@ -23,11 +23,11 @@ struct virtualdrumsApp: App {
         ImmersiveSpace(id: "drum-volume") {
             ImmersiveView()
                 .environmentObject(appState)
-                .onAppear { appState.isImmersiveSpaceOpen = true }
+                .onAppear {
+                    appState.isImmersiveSpaceOpen = true
+                    FootPedalManager.shared.startListening()
+                }
                 .onDisappear { appState.isImmersiveSpaceOpen = false }
-        }
-        .commands { 
-            FootPedalCommands()
         }
         .environmentObject(appState)
     }
