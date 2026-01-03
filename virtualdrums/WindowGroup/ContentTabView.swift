@@ -37,10 +37,10 @@ struct ContentTabView: View {
                     }
                 }
 
-            CreditsView()
+            InfoView()
                 .environmentObject(appState)
                 .tabItem {
-                    Label("Credits", systemImage: "info.circle")
+                    Label("Info", systemImage: "info.circle")
                 }
 
             #if targetEnvironment(simulator)
