@@ -2,6 +2,7 @@ import SwiftUI
 import RealityKit
 import RealityKitContent
 import AVFoundation
+import ARKit
 
 extension CollisionGroup {
     static let drum = CollisionGroup(rawValue: 1 << 0)
@@ -26,8 +27,11 @@ struct ImmersiveView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var pedals = FootPedalManager.shared
     @StateObject private var drumController = DrumController.shared
+    @StateObject private var grip = HandGripManager.shared
     @State private var leftStick: StickState?
     @State private var rightStick: StickState?
+    @State private var handTrackingSession = ARKitSession()
+    @State private var handProvider = HandTrackingProvider()    
     @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
     #if targetEnvironment(simulator)
@@ -51,6 +55,14 @@ struct ImmersiveView: View {
                 content.add(rootDrumEntity)
 
                 await setupUpdateLoop(content: content)
+            }
+            .task {
+                try? await handTrackingSession.run([handProvider])
+            }
+            .task {
+                for await update in handProvider.anchorUpdates {
+                    HandGripManager.shared.update(from: update.anchor)
+                }
             }
             .gesture(
                 SpatialTapGesture()
@@ -252,6 +264,8 @@ struct ImmersiveView: View {
 
     private func setupUpdateLoop(content: RealityViewContent) async {
         updateSub = content.subscribe(to: SceneEvents.Update.self) { event in
+            updateStickVisibility()
+
             processStrike(stick: &leftStick, deltaTime: Float(event.deltaTime))
             processStrike(stick: &rightStick, deltaTime: Float(event.deltaTime))
             
@@ -260,9 +274,17 @@ struct ImmersiveView: View {
             #endif // targetEnvironment(simulator)
         }
     }
+    
+    /// Shows or hides the drum sticks based on whether the user is gripping, matching real-world playing intent and reducing accidental interaction.
+    /// Stick visibility is also tied to grip state because collision and raycast detection are strangely only reliable when the hand is in a fist.
+    private func updateStickVisibility() {
+        leftStick?.stickEntity.isEnabled = grip.isLeftHandGripping
+        rightStick?.stickEntity.isEnabled = grip.isRightHandGripping
+    }
 
     private func processStrike(stick: inout StickState?, deltaTime: Float ) {
         guard var s = stick else { return }
+        guard s.stickEntity.isEnabled else { return } // only process if stick is visible (hand is gripping)
 
         let tipPosition = s.tipEntity.position(relativeTo: nil)
         guard let lastPosition = s.lastTipPosition else {
