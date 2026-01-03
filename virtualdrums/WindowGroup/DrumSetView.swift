@@ -38,6 +38,10 @@ struct DrumSetView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
 
+    private func isSelected(_ drumSetID: DrumSetID) -> Bool {
+        return appState.selectedDrumSet == drumSetID && appState.isImmersiveSpaceOpen
+    }
+    
     var body: some View {
         VStack(spacing: 30) {
             
@@ -55,11 +59,21 @@ struct DrumSetView: View {
             // Drum set selection buttons
             VStack() {
                 ForEach(DrumSet.all) { set in
-                    DrumSetButton(
-                        set: set,
-                        appState: appState,
-                        openImmersiveSpace: openImmersiveSpace
-                    )
+                    if isSelected(set.id) {
+                        DrumSetButton(
+                            set: set,
+                            appState: appState,
+                            openImmersiveSpace: openImmersiveSpace
+                        )
+                        .buttonStyle(.borderless)
+                        .disabled(true)
+                    } else {
+                        DrumSetButton(
+                            set: set,
+                            appState: appState,
+                            openImmersiveSpace: openImmersiveSpace
+                        )
+                    }
                 }
             }
         }

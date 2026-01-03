@@ -46,6 +46,10 @@ struct DrumKitView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
 
+    private func isSelected(_ kitID: DrumKitID) -> Bool {
+        return appState.selectedDrumKit == kitID
+    }
+    
     var body: some View {
         VStack(spacing: 30) {
             
@@ -62,11 +66,21 @@ struct DrumKitView: View {
             // Drum kit selection buttons
             VStack() {
                 ForEach(DrumKit.all) { kit in
-                    DrumKitButton(
-                        kit: kit,
-                        appState: appState,
-                        openImmersiveSpace: openImmersiveSpace
-                    )
+                    if isSelected(kit.id) {
+                        DrumKitButton(
+                            kit: kit,
+                            appState: appState,
+                            openImmersiveSpace: openImmersiveSpace
+                        )
+                        .buttonStyle(.borderless)
+                        .disabled(true)
+                    } else {
+                        DrumKitButton(
+                            kit: kit,
+                            appState: appState,
+                            openImmersiveSpace: openImmersiveSpace
+                        )
+                    }
                 }
             }
         }
