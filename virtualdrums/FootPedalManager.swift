@@ -120,4 +120,16 @@ final class FootPedalManager: ObservableObject {
         
         print("🥁 PS4 Drum Controller Ready")
     }
+
+    @MainActor
+    func toggleHiHat() {
+        print("toggle")
+            if isHiHatClosed {
+                self.hiHatPedalDistance = 1.0
+                self.isHiHatClosed = false
+            } else {
+                self.hiHatPedalDistance = 0.0
+                self.isHiHatClosed = true
+            }
+        }
 }

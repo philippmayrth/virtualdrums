@@ -30,11 +30,11 @@ struct ImmersiveView: View {
     @State private var rightStick: StickState?
     @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
-#if targetEnvironment(simulator)
+    #if targetEnvironment(simulator)
     @State var simulatorStickState: StickState?
     @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
     @State var simulatorSweepTask: Task<Void, Never>?
-#endif // targetEnvironment(simulator)
+    #endif // targetEnvironment(simulator)
     // TODO: refactor to use best practices for storing these properties (ViewModel? etc.)
     
     var body: some View {
@@ -52,22 +52,28 @@ struct ImmersiveView: View {
 
                 await setupUpdateLoop(content: content)
             }
-            #if targetEnvironment(simulator)
-            // add a click-to-hit gesture for the simulator
             .gesture(
                 SpatialTapGesture()
                     .targetedToAnyEntity()
                     .onEnded { value in
+                        // Toggle hi-hat closed/open state
+                        if (value.entity.name == DrumID.target_hi_hat.rawValue) {
+                            pedals.toggleHiHat()
+                        }
+                        
+                        #if targetEnvironment(simulator)
+                        // Trigger drum hit
                         guard let drumId = DrumID(rawValue: value.entity.name) else { return }
                         drumController.hitDrum(drum: drumId, strikeSpeed: nil)
                         
+                        // Start simulator sweep test at tap position
                         let local = value.location3D
                         let localPosition = SIMD3<Float>(Float(local.x), Float(local.y), Float(local.z))
                         let worldPosition = resolveTapWorldPosition( entity: value.entity, location: localPosition )
                         startSimulatorSweep(at: worldPosition)
+                        #endif // targetEnvironment(simulator)
                     }
             )
-            #endif // targetEnvironment(simulator)
         }
         .onChange(of: appState.selectedDrumSet, { oldSetID, newSetID in
             Task {
@@ -150,6 +156,10 @@ struct ImmersiveView: View {
         #if targetEnvironment(simulator)
         entity.components.set(InputTargetComponent())
         #endif // targetEnvironment(simulator)
+        
+        if entity.name == DrumID.target_hi_hat.rawValue {
+            entity.components.set(InputTargetComponent())
+        }
         
         drumController.loadDrum(drum: DrumID(rawValue: entity.name)!)
         print ("✅ Drum piece set up: ", entity.name)
