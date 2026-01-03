@@ -16,10 +16,10 @@ enum DrumID: String, CaseIterable {
     case target_floor_tom
     case target_mid_tom
     case target_high_tom
-    case target_hi_hat // generic input
-    case target_hi_hat_open
-    case target_hi_hat_closed
-    case target_hi_hat_pedal // pedal is pressed down // TODO: rename to target_hi_hat_chick
+    case target_hi_hat_top // hi-hat entity
+    case target_hi_hat_open // hi-hat sound (stick)
+    case target_hi_hat_closed // hi-hat sound (stick)
+    case target_hi_hat_chick // hi-hat sound (pedal)
     case target_ride
     case target_crash
 }
@@ -72,10 +72,10 @@ class DrumController: ObservableObject {
     // MARK: Public API
 
     func loadDrum(drum: DrumID) {
-        if drum == .target_hi_hat {
+        if drum == .target_hi_hat_top {
             AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_open)
             AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_closed)
-            AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_pedal)
+            AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_chick)
         } else {
             AudioEngine.shared.loadDrumSound(drum: drum)
         }
@@ -84,7 +84,7 @@ class DrumController: ObservableObject {
     /// Generic drum hit (used by hands, sticks, etc.)
     func hitDrum(drum: DrumID, strikeSpeed: Float?) {
         let soundToPlay: DrumID =
-                drum == .target_hi_hat
+                drum == .target_hi_hat_top
                 ? (FootPedalManager.shared.isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
                 : drum
         
@@ -101,7 +101,7 @@ class DrumController: ObservableObject {
     // MARK: Hi-hat Pedal
 
      private func onHiHatClosed(velocity: Float) {
-        hitDrum(drum: .target_hi_hat_pedal, strikeSpeed: velocity)
+        hitDrum(drum: .target_hi_hat_chick, strikeSpeed: velocity)
         AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
     }
 

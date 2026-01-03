@@ -129,6 +129,7 @@ final class FootPedalManager: ObservableObject {
                 self.isHiHatClosed = false
             } else {
                 self.hiHatPedalDistance = 0.0
+                self.hiHatVelocity = 5.0
                 self.isHiHatClosed = true
             }
         }

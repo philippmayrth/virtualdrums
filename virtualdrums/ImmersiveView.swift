@@ -34,6 +34,8 @@ struct ImmersiveView: View {
     @State private var handProvider = HandTrackingProvider()    
     @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
+    @State private var hiHatTopEntity: ModelEntity?
+    @State private var hiHatRestPosition: SIMD3<Float> = .zero
     #if targetEnvironment(simulator)
     @State var simulatorStickState: StickState?
     @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
@@ -56,6 +58,7 @@ struct ImmersiveView: View {
 
                 await setupUpdateLoop(content: content)
             }
+            #if !targetEnvironment(simulator)
             .task {
                 try? await handTrackingSession.run([handProvider])
             }
@@ -64,12 +67,13 @@ struct ImmersiveView: View {
                     HandGripManager.shared.update(from: update.anchor)
                 }
             }
+            #endif // !targetEnvironment(simulator)
             .gesture(
                 SpatialTapGesture()
                     .targetedToAnyEntity()
                     .onEnded { value in
                         // Toggle hi-hat closed/open state
-                        if (value.entity.name == DrumID.target_hi_hat.rawValue) {
+                        if (value.entity.name == DrumID.target_hi_hat_top.rawValue) {
                             pedals.toggleHiHat()
                         }
                         
@@ -94,7 +98,7 @@ struct ImmersiveView: View {
             }
         })
         .onChange(of: pedals.hiHatPedalDistance, {_, newDistance in
-            // TODO: adjust model distance of top and bottom cymbal halves
+            updateHiHatPosition(distance: newDistance)
         })
         #if targetEnvironment(simulator)
         .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
@@ -143,6 +147,10 @@ struct ImmersiveView: View {
             if let childEntity = child as? ModelEntity, // must be a ModelEntity (→ has a mesh)
                DrumID(rawValue: childEntity.name) != nil { // must be a recognized drum (→ named "target_[drum_piece]")
                 await setupDrum(entity: childEntity)
+                
+                if (entity.name == DrumID.target_hi_hat_top.rawValue) {
+                    setupHiHat(entity: childEntity)
+                }
             }
             
             await setupTargetsRecursively(from: child) // recurse into grandchildren, etc.
@@ -169,12 +177,30 @@ struct ImmersiveView: View {
         entity.components.set(InputTargetComponent())
         #endif // targetEnvironment(simulator)
         
-        if entity.name == DrumID.target_hi_hat.rawValue {
-            entity.components.set(InputTargetComponent())
-        }
-        
         drumController.loadDrum(drum: DrumID(rawValue: entity.name)!)
         print ("✅ Drum piece set up: ", entity.name)
+    }
+    
+    private func setupHiHat(entity: ModelEntity) {
+        self.hiHatTopEntity = entity
+        self.hiHatRestPosition = entity.position
+        entity.components.set(InputTargetComponent())
+        updateHiHatPosition(distance: pedals.hiHatPedalDistance)
+    }
+    
+    private func updateHiHatPosition(distance: Float) {
+        // drum models have different scale, therefore we use a easy fix and hard code different values
+        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.065 : 4
+        
+        if (pedals.isControllerConnected) {
+            hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
+        } else { // with animation
+            hiHatTopEntity?.move(to: Transform(translation: hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)),
+                relativeTo: hiHatTopEntity?.parent,
+                duration: 0.25
+            )
+        }
+        
     }
     
     // MARK: Drum Sticks
