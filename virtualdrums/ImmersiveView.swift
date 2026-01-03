@@ -36,6 +36,8 @@ struct ImmersiveView: View {
     @State private var rootDrumEntity = Entity()
     @State private var hiHatTopEntity: ModelEntity?
     @State private var hiHatRestPosition: SIMD3<Float> = .zero
+    @State private var bassDrumPedalEntity: ModelEntity?
+    @State private var bassDrumPedalRestPosition: SIMD3<Float> = .zero
     #if targetEnvironment(simulator)
     @State var simulatorStickState: StickState?
     @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
@@ -100,6 +102,9 @@ struct ImmersiveView: View {
         .onChange(of: pedals.hiHatPedalDistance, {_, newDistance in
             updateHiHatPosition(distance: newDistance)
         })
+        .onChange(of: pedals.kickPedalDistance, {_, newDistance in
+            updateBassDrumPosition(distance: newDistance)
+        })
         #if targetEnvironment(simulator)
         .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
             let delta = appState.simulator.simulatorStickMoveDelta
@@ -144,15 +149,20 @@ struct ImmersiveView: View {
     
     private func setupTargetsRecursively(from entity: Entity) async {
         for child in entity.children {
-            if let childEntity = child as? ModelEntity, // must be a ModelEntity (→ has a mesh)
-               DrumID(rawValue: childEntity.name) != nil { // must be a recognized drum (→ named "target_[drum_piece]")
-                await setupDrum(entity: childEntity)
+            if let childEntity = child as? ModelEntity { // must be a ModelEntity (→ has a mesh)
                 
-                if (entity.name == DrumID.target_hi_hat_top.rawValue) {
-                    setupHiHat(entity: childEntity)
+                if DrumID(rawValue: childEntity.name) != nil { // must be a recognized drum (→ named "target_[drum_piece]")
+                    await setupDrum(entity: childEntity)
+                    
+                    if (entity.name == DrumID.target_hi_hat_top.rawValue) { // setup extra config for hi hat
+                        setupHiHat(entity: childEntity)
+                    }
                 }
+                else if childEntity.name == "bass_drum_pedal" {
+                    setupBassDrumPedal(entity: childEntity)
+                }
+                
             }
-            
             await setupTargetsRecursively(from: child) // recurse into grandchildren, etc.
         }
     }
@@ -190,7 +200,7 @@ struct ImmersiveView: View {
     
     private func updateHiHatPosition(distance: Float) {
         // drum models have different scale, therefore we use a easy fix and hard code different values
-        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.065 : 4
+        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
         
         if (pedals.isControllerConnected) {
             hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
@@ -200,7 +210,22 @@ struct ImmersiveView: View {
                 duration: 0.25
             )
         }
+    }
+    
+    private func setupBassDrumPedal(entity: ModelEntity) {
+        self.bassDrumPedalEntity = entity
+        self.bassDrumPedalRestPosition = entity.position
+        updateBassDrumPosition(distance: pedals.kickPedalDistance)
+    }
+    
+    private func updateBassDrumPosition(distance: Float) {
+        guard pedals.isControllerConnected else {
+            bassDrumPedalEntity?.isEnabled = false
+            return
+        }
         
+        bassDrumPedalEntity?.isEnabled = true
+        bassDrumPedalEntity?.position = bassDrumPedalRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
     }
     
     // MARK: Drum Sticks
