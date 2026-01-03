@@ -198,7 +198,8 @@ struct ImmersiveView: View {
         self.hiHatTopEntity = entity
         self.hiHatRestPosition = entity.position
         entity.components.set(InputTargetComponent())
-        updateHiHatPosition(distance: pedals.hiHatPedalDistance)
+        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
+        hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, pedals.hiHatPedalDistance * maxLift)
     }
     
     private func updateHiHatPosition(distance: Float) {
