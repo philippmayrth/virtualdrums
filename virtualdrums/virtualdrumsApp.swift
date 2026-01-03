@@ -17,16 +17,14 @@ struct virtualdrumsApp: App {
             ContentTabView()
                 .environmentObject(appState)
                 .frame(minWidth: 600, maxWidth: 600, minHeight: 450, maxHeight: 450)
+                .onAppear { FootPedalManager.shared.startListening() }
         }
         .windowResizability(.contentSize)
         
         ImmersiveSpace(id: "drum-volume") {
             ImmersiveView()
                 .environmentObject(appState)
-                .onAppear {
-                    appState.isImmersiveSpaceOpen = true
-                    FootPedalManager.shared.startListening()
-                }
+                .onAppear { appState.isImmersiveSpaceOpen = true }
                 .onDisappear { appState.isImmersiveSpaceOpen = false }
         }
         .environmentObject(appState)

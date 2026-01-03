@@ -13,6 +13,9 @@ final class FootPedalManager: ObservableObject {
     
     static let shared = FootPedalManager()
     
+    @Published private(set) var isControllerConnected: Bool = false
+    @Published private(set) var controllerName: String?
+    
     private var controller: GCController?
     
     // Hi-hat pedal state
@@ -42,12 +45,24 @@ final class FootPedalManager: ObservableObject {
             guard let controller = note.object as? GCController else { return }
             self?.setup(controller)
         }
+        
+        // Lost connection
+        NotificationCenter.default.addObserver(
+            forName: .GCControllerDidDisconnect,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.controller = nil
+            self?.isControllerConnected = false
+            self?.controllerName = nil
+        }
     }
     
     private func setup(_ controller: GCController) {
-        self.controller = controller
-        
         guard let gamepad = controller.extendedGamepad else { return }
+        self.controller = controller
+        self.isControllerConnected = true
+        self.controllerName = controller.vendorName ?? nil
         
         // Kick drum (R2 trigger)
         gamepad.rightTrigger.valueChangedHandler = { _, value, _ in

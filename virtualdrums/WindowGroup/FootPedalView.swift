@@ -12,72 +12,103 @@ import RealityKitContent
 struct FootPedalView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
+    
+    @StateObject private var pedal = FootPedalManager.shared
 
     var body: some View {
-        VStack(spacing: 10) {
+        ScrollView {
 
-            Text("Foot Pedals")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+            VStack(spacing: 18) {
 
-            VStack(alignment: .leading, spacing: 10) {
+                Text("Foot Pedals")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                VStack(spacing: 10) {
+                    
+                    Text(
+                        "An optional way to control the kick drum and hi-hat is by using a physical game controller as pedals."
+                    )
+                    
+                    VStack() {
+                        Text(
+                            "Key mapping for PS4 Controller:"
+                        )
 
-                wrappedText(
-                    "Foot pedals are an optional alternative to the virtual sticks and floating controls. " +
-                    "They let you play the kick drum and hi-hat using physical foot controllers."
-                )
+                        VStack(alignment: .center, spacing: 6) {
+                            Text("Left Trigger (L2)  →  Hi-hat pedal")
+                            Text("Right Trigger (R2)  →  Kick pedal")
+                        }
+                        .fontWeight(.bold)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .foregroundColor(.white)
 
-                sectionTitle("How It Works")
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(pedal.isControllerConnected ? Color.green : Color.red)
+                                .frame(width: 10, height: 10)
 
-                wrappedText(
-                    "The app supports physical keyboards connected via Bluetooth. " +
-                    "This includes standard keyboards as well as modified or custom-built foot pedal controllers."
-                )
+                            Text(pedal.isControllerConnected ? ((pedal.controllerName ?? "Controller") + " connected") : "No controller connected")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
+                    }
+                    .padding(10)
+                    
+                    Text("Alternatively the kick drum can also be played by striking it with a drum stick, and the hi-hat can be opened or closed using a tap gesture.")
+                        .foregroundStyle(.white)
 
-                wrappedText(
-                    "As long as the device communicates using the standard keyboard protocol, it will work."
-                )
-
-                sectionTitle("Key Mapping")
-
-                VStack(alignment: .leading, spacing: 6) {
-                    keyRow(key: "Space", action: "Play kick drum")
-                    keyRow(key: "Return", action: "Play hi-hat")
-                    keyRow(key: "Delete", action: "Toggle hi-hat open / closed")
                 }
                 .foregroundColor(.secondary)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
                 
+                    
+                // MARK: - Advanced / Technical
+
+                Text("GameControllers & Custom Pedals")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .padding(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
+
+                VStack(spacing: 10) {
+                    Text(
+                        "This app uses Apple’s GameController framework to handle foot pedal input. " +
+                        "Any device that presents itself as a standard game controller (HID) is supported."
+                    )
+                    
+                    Text(
+                        "This includes commercially available game controllers (e.g. Playstation) as well as custom-built foot pedals using " +
+                        "microcontrollers that emulate a Bluetooth HID gamepad."
+                    )
+
+                    Text(
+                        "Unlike simple button-based input, the GameController framework provides continuous trigger values " +
+                        "from 0 to 1. These values represent pedal travel, allowing the app to calculate pedal speed, force, " +
+                        "and hold duration."
+                    )
+
+                    Text(
+                        "From the app’s perspective, a custom-built pedal behaves exactly like a standard controller trigger, " +
+                        "requiring no special configuration or permissions."
+                    )
+                    
+                    Text(
+                        "This makes it possible to build custom pedals using components such as " +
+                        "hall sensors, potentiometers, or load cells, while still integrating seamlessly with the app."
+                    )
+                }
+                .foregroundColor(.secondary)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: 520)
+            .frame(maxWidth: 600)
+            .padding(40)
         }
-        .padding(40)
     }
 
-    // MARK: - Helpers
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .fontWeight(.bold)
-    }
-
-    private func wrappedText(_ text: String) -> some View {
-        Text(text)
-            .foregroundColor(.secondary)
-            .lineLimit(nil)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func keyRow(key: String, action: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•")
-            Text(key)
-                .fontWeight(.semibold)
-            Text("→ \(action)")
-        }
-        .lineLimit(nil)
-        .fixedSize(horizontal: false, vertical: true)
-    }
 }
 
 #Preview(windowStyle: .automatic) {
