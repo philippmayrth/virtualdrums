@@ -44,7 +44,7 @@ struct InfoView: View {
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("tba")
+            Text("Developed by Oliver Hans Kühle, Philipp Mayr, Julius Immanuel Greppmair\n\nFun Drum by local.yany (CC Attribution) https://sketchfab.com/3d-models/drum-kit-57f6bb6e93c14762b0da1be2a50f1f44")
                 .foregroundColor(.secondary)
                 .font(.body)
 
