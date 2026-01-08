@@ -22,6 +22,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				assets/external,
+				external,
 				Info.plist,
 			);
 			target = 910055042EAA0EB200ABF163 /* virtualdrums */;
@@ -36,6 +37,7 @@
 			);
 			explicitFolders = (
 				assets/external,
+				external,
 			);
 			path = virtualdrums;
 			sourceTree = "<group>";
