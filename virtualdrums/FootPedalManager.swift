@@ -58,79 +58,136 @@ final class FootPedalManager: ObservableObject {
         }
     }
     
+    /// Method for toggling the hi-hat without a press/release state.
+    /// Used for the alternative interaction of tapping the hi-hat model.
+    @MainActor func toggleHiHat() {
+        if isHiHatClosed {
+            self.hiHatPedalDistance = 1.0
+            self.isHiHatClosed = false
+        } else {
+            self.hiHatPedalDistance = 0.0
+            self.hiHatVelocity = 5.0
+            self.isHiHatClosed = true
+        }
+    }
+    
+    /// We divide the standard controller in a left and right side:
+    /// - Left side (D-Pad, Left Trigger, Left Shoulder, Left Thumbstick) → Hi-Hat Pedal
+    /// - Right side (Face Buttons, Right Trigger, Right Shoulder, Right Thumbstick) → Kick Drum Pedal
     private func setup(_ controller: GCController) {
         guard let gamepad = controller.extendedGamepad else { return }
+
         self.controller = controller
         self.isControllerConnected = true
-        self.controllerName = controller.vendorName ?? nil
+        self.controllerName = controller.vendorName
         
-        // Kick drum (R2 trigger)
-        gamepad.rightTrigger.valueChangedHandler = { _, value, _ in
-            let now = CACurrentMediaTime()
-            let distance = 1 - value
-
-            let deltaDistance = self.lastKickDistance - distance
-            let deltaTime = now - self.lastKickTime
-            
-            let velocity = deltaDistance / Float(deltaTime)
-
-            self.lastKickDistance = distance
-            self.lastKickTime = now
-
-            self.kickPedalDistance = distance
-
-            let isHit = distance == 0.0
-
-            if isHit && !self.isKickHit {
-                self.isKickHit = true
-                self.kickVelocity = velocity
-            }
-            else if !isHit && self.isKickHit {
-                self.isKickHit = false
-            }
-        }
-
-        
-        // Hi-hat pedal (L2 trigger)
+        // MARK: Triggers
         gamepad.leftTrigger.valueChangedHandler = { _, value, _ in
-            let now = CACurrentMediaTime()
-            let distance = 1 - value
-
-            let deltaDistance = self.lastHiHatDistance - distance
-            let deltaTime = now - self.lastHiHatTime
-
-            let velocity = deltaDistance / Float(deltaTime)
-
-            self.lastHiHatDistance = distance
-            self.lastHiHatTime = now
-
-            self.hiHatPedalDistance = distance
-
-            let isClosed = distance == 0.0
-
-            if isClosed && !self.isHiHatClosed {
-                self.isHiHatClosed = true
-                self.hiHatVelocity = velocity
-                
-            }
-            else if !isClosed && self.isHiHatClosed {
-                self.isHiHatClosed = false
-            }
+            self.handleHiHat(value: value)
         }
-        
-        print("🥁 PS4 Drum Controller Ready")
+
+        gamepad.rightTrigger.valueChangedHandler = { _, value, _ in
+            self.handleKick(value: value)
+        }
+
+        // MARK: Shoulders
+        gamepad.leftShoulder.pressedChangedHandler = { _, _, pressed in
+            self.handleHiHat(value: pressed ? 1.0 : 0.0)
+        }
+
+        gamepad.rightShoulder.pressedChangedHandler = { _, _, pressed in
+            self.handleKick(value: pressed ? 1.0 : 0.0)
+        }
+
+        // MARK: Face Buttons (RIGHT SIDE → Kick)
+        gamepad.buttonA.pressedChangedHandler = { _, _, pressed in
+            self.handleKick(value: pressed ? 1.0 : 0.0)
+        }
+
+        gamepad.buttonB.pressedChangedHandler = { _, _, pressed in
+            self.handleKick(value: pressed ? 1.0 : 0.0)
+        }
+
+        gamepad.buttonX.pressedChangedHandler = { _, _, pressed in
+            self.handleKick(value: pressed ? 1.0 : 0.0)
+        }
+
+        gamepad.buttonY.pressedChangedHandler = { _, _, pressed in
+            self.handleKick(value: pressed ? 1.0 : 0.0)
+        }
+
+        // MARK: D-Pad (LEFT SIDE → Hi-Hat)
+        gamepad.dpad.valueChangedHandler = { _, x, y in
+            let value = max(abs(x), abs(y))
+            self.handleHiHat(value: value)
+        }
+
+        // MARK: Thumbsticks
+        gamepad.leftThumbstick.valueChangedHandler = { _, x, y in
+            let value = max(abs(x), abs(y))
+            self.handleHiHat(value: value)
+        }
+
+        gamepad.rightThumbstick.valueChangedHandler = { _, x, y in
+            let value = max(abs(x), abs(y))
+            self.handleKick(value: value)
+        }
+
+        // Intentionally ignoring:
+        // - buttonMenu
+        // - buttonOptions
+        // - buttonHome
+
+        print("🥁 Drum controller mapped (\(self.controllerName ?? "Unknown controller")")
+    }
+
+    
+    @MainActor
+    private func handleHiHat(value: Float) {
+        let now = CACurrentMediaTime()
+        let distance = 1 - value
+
+        let deltaDistance = lastHiHatDistance - distance
+        let deltaTime = max(now - lastHiHatTime, 0.001)
+
+        let velocity = deltaDistance / Float(deltaTime)
+
+        lastHiHatDistance = distance
+        lastHiHatTime = now
+
+        hiHatPedalDistance = distance
+
+        let isClosed = distance == 0.0
+        if isClosed && !isHiHatClosed {
+            isHiHatClosed = true
+            hiHatVelocity = velocity
+        } else if !isClosed && isHiHatClosed {
+            isHiHatClosed = false
+        }
     }
 
     @MainActor
-    func toggleHiHat() {
-        print("toggle")
-            if isHiHatClosed {
-                self.hiHatPedalDistance = 1.0
-                self.isHiHatClosed = false
-            } else {
-                self.hiHatPedalDistance = 0.0
-                self.hiHatVelocity = 5.0
-                self.isHiHatClosed = true
-            }
+    private func handleKick(value: Float) {
+        let now = CACurrentMediaTime()
+        let distance = 1 - value
+
+        let deltaDistance = lastKickDistance - distance
+        let deltaTime = max(now - lastKickTime, 0.001)
+
+        let velocity = deltaDistance / Float(deltaTime)
+
+        lastKickDistance = distance
+        lastKickTime = now
+
+        kickPedalDistance = distance
+
+        let isHit = distance == 0.0
+        if isHit && !isKickHit {
+            isKickHit = true
+            kickVelocity = velocity
+        } else if !isHit && isKickHit {
+            isKickHit = false
         }
+    }
+
 }
