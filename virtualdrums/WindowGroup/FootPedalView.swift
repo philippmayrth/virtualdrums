@@ -44,16 +44,32 @@ struct FootPedalView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .foregroundColor(.white)
 
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(pedal.isControllerConnected ? Color.green : Color.red)
-                                .frame(width: 10, height: 10)
-
-                            Text(pedal.isControllerConnected ? ((pedal.controllerName ?? "Controller") + " connected") : "No controller connected")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                        if (pedal.isControllerConnected) {
+                            ForEach(pedal.controllerNames, id: \.self) { controllerName in
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(pedal.isControllerConnected ? Color.green : Color.red)
+                                        .frame(width: 10, height: 10)
+                                    
+                                    Text(pedal.isControllerConnected ? ((controllerName) + " connected") : "No controller connected")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
+                            }
+                        } else {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(pedal.isControllerConnected ? Color.green : Color.red)
+                                    .frame(width: 10, height: 10)
+                                
+                                Text("No controller connected")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
                         }
-                        .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
+                        
                     }
                     .padding(10)
                     

@@ -14,9 +14,12 @@ final class FootPedalManager: ObservableObject {
     static let shared = FootPedalManager()
     
     @Published private(set) var isControllerConnected: Bool = false
-    @Published private(set) var controllerName: String?
-    
-    private var controller: GCController?
+    @Published private(set) var connectedControllers: [GCController] = []
+    var controllerNames: [String] {
+        connectedControllers.map {
+            $0.vendorName ?? "Unknown controller"
+        }
+    }
     
     // Hi-hat pedal state
     @Published private(set) var hiHatPedalDistance: Float = 1.0
@@ -33,10 +36,7 @@ final class FootPedalManager: ObservableObject {
     private var lastKickTime: TimeInterval = 0
     
     func startListening() {
-        // Existing controllers
         GCController.controllers().forEach { setup($0) }
-        
-        // New connections
         NotificationCenter.default.addObserver(
             forName: .GCControllerDidConnect,
             object: nil,
@@ -45,16 +45,13 @@ final class FootPedalManager: ObservableObject {
             guard let controller = note.object as? GCController else { return }
             self?.setup(controller)
         }
-        
-        // Lost connection
         NotificationCenter.default.addObserver(
             forName: .GCControllerDidDisconnect,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
-            self?.controller = nil
-            self?.isControllerConnected = false
-            self?.controllerName = nil
+        ) { [weak self] note in
+            guard let controller = note.object as? GCController else { return }
+            self?.remove(controller)
         }
     }
     
@@ -74,12 +71,15 @@ final class FootPedalManager: ObservableObject {
     /// We divide the standard controller in a left and right side:
     /// - Left side (D-Pad, Left Trigger, Left Shoulder, Left Thumbstick) → Hi-Hat Pedal
     /// - Right side (Face Buttons, Right Trigger, Right Shoulder, Right Thumbstick) → Kick Drum Pedal
-    private func setup(_ controller: GCController) {
+    private func setup(_ controller: GCController) {    
         guard let gamepad = controller.extendedGamepad else { return }
 
-        self.controller = controller
-        self.isControllerConnected = true
-        self.controllerName = controller.vendorName
+        // Prevent duplicates
+        if connectedControllers.contains(where: { $0 === controller }) {
+            return
+        }
+        connectedControllers.append(controller)
+        isControllerConnected = true
         
         // MARK: Triggers
         gamepad.leftTrigger.valueChangedHandler = { _, value, _ in
@@ -138,9 +138,15 @@ final class FootPedalManager: ObservableObject {
         // - buttonOptions
         // - buttonHome
 
-        print("🥁 Drum controller mapped (\(self.controllerName ?? "Unknown controller")")
+        print("🥁 Controller connected: \(controller.vendorName ?? "Unknown")")
     }
+    
+    private func remove(_ controller: GCController) {
+        connectedControllers.removeAll { $0 === controller }
+        isControllerConnected = !connectedControllers.isEmpty
 
+        print("🔌 Controller disconnected: \(controller.vendorName ?? "Unknown")")
+    }
     
     @MainActor
     private func handleHiHat(value: Float) {
