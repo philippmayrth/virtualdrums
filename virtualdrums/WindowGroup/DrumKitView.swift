@@ -10,9 +10,9 @@ import RealityKit
 import RealityKitContent
 
 enum DrumKitID: String, CaseIterable, Identifiable {
-    case bite
-    case kick
-    case squeeze
+    case accoustic
+    case electronic
+    case alternative
 
     var id: String { rawValue }
 }
@@ -22,24 +22,24 @@ private struct DrumKit: Identifiable {
     let label: String
     let description: String
 
-    static let bite = DrumKit(
-        id: .bite,
-        label: "Bite Kit",
-        description: "Aggressive, punchy drum sounds"
-    )    
-    static let kick = DrumKit(
-        id: .kick,
-        label: "Kick Kit",
-        description: "Deep, powerful drum sounds"
+    static let accoustic = DrumKit(
+        id: .accoustic,
+        label: "Accoustic Kit",
+        description: "Natural sounds with warm resonance and dynamic feel"
     )
-    static let squeeze = DrumKit(
-        id: .squeeze,
-        label: "Squeeze Kit",
+    static let electronic = DrumKit(
+        id: .electronic,
+        label: "Electronic Kit",
+        description: "Textured sounds with controlled grit and clarity"
+    )
+    static let alternative = DrumKit(
+        id: .alternative,
+        label: "Alternative Kit",
         description: "Tight, compressed drum sounds"
     )
     
     /// Collection for looping
-    static let all: [DrumKit] = [.bite, .kick, .squeeze]
+    static let all: [DrumKit] = [.accoustic, .electronic, .alternative]
 }
 
 struct DrumKitView: View {
