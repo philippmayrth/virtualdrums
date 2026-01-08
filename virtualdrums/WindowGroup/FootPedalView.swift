@@ -1,10 +1,3 @@
-//
-//  FootPedalView.swift
-//  virtualdrums
-//
-//  Created by Oliver Kühle on 02.01.26.
-//
-
 import SwiftUI
 import RealityKit
 import RealityKitContent
@@ -12,122 +5,154 @@ import RealityKitContent
 struct FootPedalView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
-    
     @StateObject private var pedal = FootPedalManager.shared
+
+    private let contentWidth: CGFloat = 600
 
     var body: some View {
         ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
 
-            VStack(spacing: 18) {
+                headerSection
+                descriptionSection
+                connectionSection
+                mappingSection
+                supportedControllersSection
 
-                Text("Foot Pedals")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                VStack(spacing: 10) {
-                    
-                    Text(
-                        "An optional way to control the kick drum and hi-hat is by using a physical game controller as pedals."
-                    )
-                    
-                    VStack() {
-                        Text(
-                            "Key mapping for PS4 Controller:"
-                        )
-
-                        VStack(alignment: .center, spacing: 6) {
-                            Text("Left Trigger (L2)  →  Hi-hat pedal")
-                            Text("Right Trigger (R2)  →  Kick pedal")
-                        }
-                        .fontWeight(.bold)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .foregroundColor(.white)
-
-                        if (pedal.isControllerConnected) {
-                            ForEach(pedal.controllerNames, id: \.self) { controllerName in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(pedal.isControllerConnected ? Color.green : Color.red)
-                                        .frame(width: 10, height: 10)
-                                    
-                                    Text(pedal.isControllerConnected ? ((controllerName) + " connected") : "No controller connected")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
-                            }
-                        } else {
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(pedal.isControllerConnected ? Color.green : Color.red)
-                                    .frame(width: 10, height: 10)
-                                
-                                Text("No controller connected")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(EdgeInsets(top: 5, leading: 0, bottom: 0, trailing: 0))
-                        }
-                        
-                    }
-                    .padding(10)
-                    
-                    Text("Alternatively the kick drum can also be played by striking it with a drum stick, and the hi-hat can be opened or closed using a tap gesture.")
-                        .foregroundStyle(.white)
-
-                }
-                .foregroundColor(.secondary)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-                
-                    
-                // MARK: - Advanced / Technical
-
-                Text("GameControllers & Custom Pedals")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
-
-                VStack(spacing: 10) {
-                    Text(
-                        "This app uses Apple’s GameController framework to handle foot pedal input. " +
-                        "Any device that presents itself as a standard game controller (HID) is supported."
-                    )
-                    
-                    Text(
-                        "This includes commercially available game controllers (e.g. Playstation) as well as custom-built foot pedals using " +
-                        "microcontrollers that emulate a Bluetooth HID gamepad."
-                    )
-
-                    Text(
-                        "Unlike simple button-based input, the GameController framework provides continuous trigger values " +
-                        "from 0 to 1. These values represent pedal travel, allowing the app to calculate pedal speed, force, " +
-                        "and hold duration."
-                    )
-
-                    Text(
-                        "From the app’s perspective, a custom-built pedal behaves exactly like a standard controller trigger, " +
-                        "requiring no special configuration or permissions."
-                    )
-                    
-                    Text(
-                        "This makes it possible to build custom pedals using components such as " +
-                        "hall sensors, potentiometers, or load cells, while still integrating seamlessly with the app."
-                    )
-                }
-                .foregroundColor(.secondary)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: 600)
-            .padding(40)
+            .frame(maxWidth: contentWidth, alignment: .leading)
+            .padding(30)
+        }
+    }
+}
+
+private extension FootPedalView {
+    var headerSection: some View {
+        Text("Game Controller as Foot Pedal")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+
+private extension FootPedalView {
+    var connectionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if pedal.isControllerConnected {
+                ForEach(pedal.controllerNames, id: \.self) { name in
+                    statusRow(text: "\(name) connected", color: .green)
+                }
+            } else {
+                statusRow(text: "No controller connected", color: .red)
+            }
         }
     }
 
+    func statusRow(text: String, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(color)
+                .frame(width: 10, height: 10)
+
+            Text(text)
+                .foregroundColor(.secondary)
+        }
+    }
 }
 
-#Preview(windowStyle: .automatic) {
-    FootPedalView()
-        .environmentObject(AppState())
+
+private extension FootPedalView {
+    var descriptionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("By default, the kick is played with a drum stick and the hi-hat with tap gestures.")
+
+            Text("Optionally, a physical game controller can be used to control the foot pedals instead.")
+
+        }
+    }
+}
+
+
+private extension FootPedalView {
+    var mappingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            Text("All left-side controls operate the hi-hat, all right-side controls the kick.")
+                .font(.callout)
+            
+            Divider()
+            
+            mappingRow(
+                title: "Hi-Hat",
+                content:
+                    """
+                    Left Thumbstick (any direction)
+                    Left Trigger (L2)
+                    Left Shoulder (L1)
+                    D-Pad (any direction)
+                    """
+            )
+
+            Divider()
+
+            mappingRow(
+                title: "Kick",
+                content:
+                    """
+                    Right Thumbstick (any direction)
+                    Right Trigger (R2)
+                    Right Shoulder (R1)
+                    Button A, B, X, Y
+                    """
+            )
+            
+            Divider()
+            
+            Text("Triggers and thumbsticks are recommended, as they respond continuously to how far you press.")
+                .font(.callout)
+            
+        }
+        .padding(16)
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .foregroundColor(.white)
+    }
+
+    func mappingRow(title: String, content: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Text(title)
+                .fontWeight(.bold)
+                .frame(width: 80, alignment: .leading)
+
+            Text(content)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.callout)
+    }
+}
+
+
+private extension FootPedalView {
+    var supportedControllersSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            Text("Supported Controllers")
+                .font(.title)
+                .fontWeight(.bold)
+
+            Group {
+                Text("This app uses Apple’s GameController framework and supports any device that conforms to the GCExtendedGamepad profile.")
+
+                Text("This includes commercial controllers (PS, Xbox, Switch) as well as custom-built pedals that emulate a HID gamepad.")
+
+                Text("Analog inputs are recommended, such as triggers or thumbsticks, as they report continuous values.")
+
+                Text("Custom pedals behave exactly like standard controller inputs and require no special configuration.")
+
+                Text("We are working on instructions for 3D-printed pedal adapters and custom microcontroller-based pedals. Contributions are welcome.")
+            }
+            .foregroundColor(.secondary)
+        }
+    }
 }
