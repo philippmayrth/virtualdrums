@@ -219,6 +219,7 @@ struct ImmersiveView: View {
     private func setupBassDrumPedal(entity: ModelEntity) {
         self.bassDrumPedalEntity = entity
         self.bassDrumPedalRestPosition = entity.position
+        self.bassDrumPedalEntity?.isEnabled = false
         updateBassDrumPosition(distance: pedals.kickPedalDistance)
     }
     
