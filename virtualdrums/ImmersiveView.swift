@@ -38,6 +38,8 @@ struct ImmersiveView: View {
     @State private var hiHatRestPosition: SIMD3<Float> = .zero
     @State private var bassDrumPedalEntity: ModelEntity?
     @State private var bassDrumPedalRestPosition: SIMD3<Float> = .zero
+    @State private var drumRestOrientations: [Entity.ID: simd_quatf] = [:]
+
     #if targetEnvironment(simulator)
     @State var simulatorStickState: StickState?
     @State var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
@@ -89,6 +91,10 @@ struct ImmersiveView: View {
                         let localPosition = SIMD3<Float>(Float(local.x), Float(local.y), Float(local.z))
                         let worldPosition = resolveTapWorldPosition( entity: value.entity, location: localPosition )
                         startSimulatorSweep(at: worldPosition)
+
+                        // TODO: calculate correct world position
+                        wiggleDrum(drum: value.entity, hitWorldPosition: worldPosition, strikeSpeed: 3.0)                             
+
                         #endif // targetEnvironment(simulator)
                     }
             )
@@ -185,6 +191,8 @@ struct ImmersiveView: View {
                 filter: .init(group: .drum, mask: .stickTipLeft.union(.stickTipRight))
             )
         )
+        
+        drumRestOrientations[entity.id] = entity.orientation
         
         #if targetEnvironment(simulator)
         entity.components.set(InputTargetComponent())
@@ -391,6 +399,7 @@ struct ImmersiveView: View {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
                 drumController.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
+                wiggleDrum(drum: hit.entity, hitWorldPosition: hit.position, strikeSpeed: strikeSpeed)
                 
                 #if targetEnvironment(simulator)
                 updateDebugHitAccepted(drumName: hit.entity.name)
@@ -409,6 +418,80 @@ struct ImmersiveView: View {
         }
     }
     
+    @MainActor
+    private func wiggleDrum(
+        drum: Entity,
+        hitWorldPosition: SIMD3<Float>,
+        strikeSpeed: Float
+    ) {
+        guard let restOrientation = drumRestOrientations[drum.id] else { return }
+
+        let center = drum.position(relativeTo: nil)
+        let rawHitDir = hitWorldPosition - center
+        
+        // Get the entity UP vector (direction of the drum surface)
+        let transform = drum.transformMatrix(relativeTo: nil)
+        let drumNormal = normalize(SIMD3<Float>(
+            transform.columns.2.x,
+            transform.columns.2.y,
+            transform.columns.2.z
+        ))
+
+        // Hit direction → tilt axis
+        let hitDirInPlane = rawHitDir - dot(rawHitDir, drumNormal) * drumNormal
+        guard simd_length_squared(hitDirInPlane) > 0.0001 else { return }
+        let hitDir = normalize(hitDirInPlane)
+        let worldTiltAxis = normalize(cross(drumNormal, hitDir))
+        let localTiltAxis = normalize(
+            drum.convert(direction: worldTiltAxis, from: nil)
+        )
+       
+        // Hit radius (distance from center)
+        let hitRadius = simd_length(hitDirInPlane)
+
+        // Tuned drum radius (world units)
+        
+        let bounds = drum.visualBounds(relativeTo: nil)
+        let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
+        
+        // Radius factor (0.0 - 1.0), influences tilt angle
+        let radiusFactor = min(hitRadius / radius, 1.0)
+
+        // strikeSpeed → angle
+        let clampedSpeed: Float = min(max(strikeSpeed, 0.2), 6.0)
+
+        // Hi-hat pedal dampening
+        let isHiHatTop = drum.name == DrumID.target_hi_hat_top.rawValue
+        let hiHatFactor: Float? = isHiHatTop ? max(0.03, pedals.hiHatPedalDistance) : nil
+
+        let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
+
+
+        let tilt = simd_quatf(angle: angle, axis: localTiltAxis)
+
+        drum.move(
+            to: Transform(
+                scale: drum.scale,
+                rotation: tilt * restOrientation,
+                translation: drum.position
+            ),
+            relativeTo: drum.parent,
+            duration: 0.05,
+            timingFunction: .easeOut
+        )
+
+        drum.move(
+            to: Transform(
+                scale: drum.scale,
+                rotation: restOrientation,
+                translation: drum.position
+            ),
+            relativeTo: drum.parent,
+            duration: 0.3,
+            timingFunction: .easeInOut
+        )
+    }
+
 }
 
 // MARK: Preview
