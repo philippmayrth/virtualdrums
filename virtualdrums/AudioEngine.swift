@@ -9,133 +9,131 @@ import AVFAudio
 import Combine
 import Foundation
 
+/// Realtime audio playback engine for drum samples.
+/// Owns all AVAudioPlayers and handles polyphony, kit switching, and playback.
 final class AudioEngine: ObservableObject {
 
-    // MARK: - Singleton
     static let shared = AudioEngine()
     private init(maxPolyphony: Int = 8) {
         self.maxPolyphony = maxPolyphony
-    }
+    }    
+    
+    @Published var isReady: Bool = false /// Whether the engine has all samples loaded and is ready to play.    
+    @Published var localAudioMuted: Bool = false /// If true, no local audio is produced (used for DAW monitoring / recording).
 
-    // MARK: - Audio Engine
-    
-    @Published var isReady: Bool = false
-    @Published var localAudioMuted: Bool = false // Mute local sounds for recording
-    private var audioPlayers: [DrumID: [AVAudioPlayer]] = [:]
-    private var currentPlayerIndex: [DrumID: Int] = [:]
     private let maxPolyphony: Int
-    private var selectedDrumKit: DrumKitID?
-    
+
+    private var activeKit: DrumKitID?
+    private var players: [DrumID: [AVAudioPlayer]] = [:] /// One polyphonic pool per drum.
+    private var playerIndex: [DrumID: Int] = [:] /// Round-robin index per drum.
+        
     func setDrumKit(kit: DrumKitID) {
-        self.selectedDrumKit = kit
-        self.loadDrumKit(kit: kit)
+        guard kit != activeKit else { return }
+        activeKit = kit
+        reloadAllSounds()
     }
     
-    func playSound(drum: DrumID, volume: Float = 1, pitch: Float = 1) {
-        // Don't play if local audio is muted (for recording with DAW monitoring)
-        guard !localAudioMuted else { return }
-        
-        guard let players = audioPlayers[drum], !players.isEmpty else {
-            print("⚠️ No audio player available for drum: \(drum)")
+    // MARK: - Playback
+
+    func playSound(drum: DrumID, volume: Float = 1.0) {
+        guard !localAudioMuted else { return }        
+        guard let pool = players[drum], !pool.isEmpty else {
+            print("⚠️ No sound loaded for:", drum)
             return
         }
         
         // Get next available player (round-robin)
-        let index = currentPlayerIndex[drum] ?? 0
-        let player = players[index]
+        let index = playerIndex[drum] ?? 0
+        let player = pool[index]
         
         // Update index for next hit
-        currentPlayerIndex[drum] = (index + 1) % players.count
+        playerIndex[drum] = (index + 1) % pool.count
                 
         player.volume = volume
-        player.rate = pitch
-        
-        // Reset to beginning and play
+        // player.rate = pitch
         player.currentTime = 0
         player.play()
         
-        print("🎶 Playing sound \(drum) - volume: \(volume), pitch: \(pitch)")
+        print("🎶 Playing sound \(drum) – at volume: \(volume)")
     }
 
-    func stopDrum(drum: DrumID) {
-        guard let players = audioPlayers[drum] else { return }
-        players.forEach { $0.stop() }
+    func stop(_ drum: DrumID) {
+        players[drum]?.forEach { $0.stop() }
     }
     
-    /// Load a single sound with polyphony support
+    func stopAll() {
+        players.values.flatMap { $0 }.forEach { $0.stop() }
+    }
+    
+    // MARK: - Loading
+
+    /// Loads a single sound with polyphony support for the current kit
     func loadDrumSound(drum: DrumID) {
-        guard let selectedDrumKit else {
+        guard let activeKit = activeKit else {
             print("⚠️ No drum kit selected")
             return
         }
 
-        if (audioPlayers[drum] != nil) {
+        guard players[drum] == nil else { 
             print("Player for \(drum.rawValue) already loaded. Skipping.")
             return
         }
         
-        let fileName = "\(selectedDrumKit)_\(drum)"
+        let fileName = "\(activeKit)_\(drum)"
 
-        // Try multiple file extensions
-        let extensions = ["aif", "wav", "m4a", "mp3", "aiff"]
-        guard let url = extensions.compactMap({ ext in
-            Bundle.main.url(forResource: fileName, withExtension: ext)
-        }).first else {
-            print("⚠️ Sound file not found: \(fileName)")
+        guard let url = findAudioFile(named: fileName) else {
+            print("⚠️ Missing sound:", fileName)
             return
         }
         
-        var players: [AVAudioPlayer] = []
+        players[drum] = makePolyphonicPlayers(from: url)
+        playerIndex[drum] = 0
+    }
+    
+    private func reloadAllSounds() {
+        print("🔄 Loading sounds of drum kit: \(activeKit!.rawValue)")
         
-        // Create multiple player instances for polyphony
+        isReady = false
+        stopAll()
+
+        // Store existing drum names
+        let drums = players.keys
+
+        // Reset state
+        players.removeAll()
+        playerIndex.removeAll()
+
+        // Reload all drums
+        for drum in drums {
+            loadDrumSound(drum: drum)
+        }
+
+        isReady = true
+    }
+    
+    // MARK: - Helpers
+
+    private func findAudioFile(named name: String) -> URL? {
+        ["aif", "aiff", "wav", "m4a", "mp3"]
+            .compactMap { Bundle.main.url(forResource: name, withExtension: $0) }
+            .first
+    }
+
+    private func makePolyphonicPlayers(from url: URL) -> [AVAudioPlayer] {
+        var pool: [AVAudioPlayer] = []
+
         for _ in 0..<maxPolyphony {
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
                 player.prepareToPlay()
                 player.enableRate = true // Allow pitch shifting
-                players.append(player)
+                pool.append(player)
             } catch {
-                print("❌ Error loading sound \(drum): \(error)")
-                return
+                print("❌ Failed to load:", url.lastPathComponent, error)
+                return []
             }
         }
 
-        audioPlayers[drum] = players
-        currentPlayerIndex[drum] = 0
-        print("✅ Loaded \(drum) sound with \(maxPolyphony)x polyphony")
-    }
-    
-    private func loadDrumKit(kit: DrumKitID) {
-        print("🔄 Loading drum kit sounds: \(kit)")
-
-        // 1. Mark engine as busy
-        isReady = false
-
-        // 2. Stop all currently playing sounds
-        stopAll()
-
-        // 3. Store existing drum names
-        let drums = Array(audioPlayers.keys)
-
-        // 4. Reset state
-        audioPlayers.removeAll()
-        currentPlayerIndex.removeAll()
-
-        // 6. Reload all drums with the new kit prefix
-        for drum in drums {
-            loadDrumSound(drum: drum)
-        }
-
-        // 7. Ready to play
-        isReady = true
-
-        print("✅ Drum kit sounds loaded: \(kit) (\(audioPlayers.count) players)")
-    }
-        
-    /// Stop all sounds
-    func stopAll() {
-        for players in audioPlayers.values {
-            players.forEach { $0.stop() }
-        }
+        return pool
     }
 }

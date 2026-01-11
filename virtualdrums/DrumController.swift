@@ -31,7 +31,7 @@ class DrumController: ObservableObject {
     
     func hitDrum(drum: DrumID, velocity: Float) {
         if drum == .target_hi_hat_chick {
-            AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
+            AudioEngine.shared.stop(.target_hi_hat_open)
         }
         
         let volume = calculateVolume(for: velocity)
