@@ -68,7 +68,7 @@ struct ImmersiveView: View {
             }
             .task {
                 for await update in handProvider.anchorUpdates {
-                    HandGripManager.shared.update(from: update.anchor)
+                    grip.update(for: update.anchor)
                 }
             }
             #endif // !targetEnvironment(simulator)
