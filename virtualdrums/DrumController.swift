@@ -12,7 +12,7 @@ import RealityKit
 
 enum DrumID: String, CaseIterable {
     case target_snare
-    case target_bass_drum
+    case target_bass_drum // aka. kick
     case target_floor_tom
     case target_mid_tom
     case target_high_tom
@@ -24,52 +24,12 @@ enum DrumID: String, CaseIterable {
     case target_crash
 }
 
-/// Main controller for the drum system
 class DrumController: ObservableObject {
     
     // MARK: Singleton
-
     static let shared = DrumController()
-
-    private init() {
-        bindFootPedals()
-    }
-
-    // MARK: Setup
-
-    private let pedal = FootPedalManager.shared
-    private var cancellables = Set<AnyCancellable>()    
-
-    private func bindFootPedals() {
-
-        // Kick drum pedal
-        pedal.$kick
-            .map(\.isTouching)
-            .removeDuplicates()
-            .filter { $0 } // only on hit
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.hitDrum(
-                    drum: .target_bass_drum,
-                    strikeSpeed: pedal.kick.velocity
-                )
-            }
-            .store(in: &cancellables)
-
-        // Hi-hat pedal ("chick")
-        pedal.$hiHat
-            .map(\.isTouching)
-            .removeDuplicates()
-            .sink { [weak self] closed in
-                guard let self else { return }
-                if closed {
-                    self.onHiHatClosed(velocity: pedal.hiHat.velocity)
-                } else {
-                    // onHiHatOpened
-                }
-            }
-            .store(in: &cancellables)
-    }
+    private init() {}
+        
 
     // MARK: Public API
 
@@ -84,10 +44,14 @@ class DrumController: ObservableObject {
     }
     
     /// Generic drum hit (used by hands, sticks, etc.)
-    func hitDrum(drum: DrumID, strikeSpeed: Float?) {
+    func hitDrum(drum: DrumID, strikeSpeed: Float?, isHiHatClosed: Bool) {
+        if (drum == .target_hi_hat_chick) {
+            AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
+        }
+        
         let soundToPlay: DrumID =
                 drum == .target_hi_hat_top
-                ? (FootPedalManager.shared.hiHat.isTouching ? .target_hi_hat_closed : .target_hi_hat_open)
+                ? (isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
                 : drum
         
         let volume: Float
@@ -104,13 +68,6 @@ class DrumController: ObservableObject {
         // Send to MIDI bridge
         let normalizedVelocity = min(max(volume / 3.0, 0.0), 1.0) // Normalize volume to 0-1
         MIDIBridgeClient.shared.sendDrumHit(drum: soundToPlay, velocity: normalizedVelocity)
-    }
-    
-    // MARK: Hi-hat Pedal
-
-     private func onHiHatClosed(velocity: Float) {
-        hitDrum(drum: .target_hi_hat_chick, strikeSpeed: velocity)
-        AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
     }
 
     // MARK: Velocity → Volume Mapping

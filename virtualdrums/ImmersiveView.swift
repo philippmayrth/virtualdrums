@@ -78,13 +78,15 @@ struct ImmersiveView: View {
                     .onEnded { value in
                         // Toggle hi-hat closed/open state
                         if (value.entity.name == DrumID.target_hi_hat_top.rawValue) {
-                            pedals.toggleHiHat()
+                            let previousDistance: Float = appState.isHiHatClosed ? 0.0 : 1.0
+                            let distance: Float = (previousDistance == 1.0) ? 0.0 : 1.0
+                            onChangeHiHatTopPosition(from: previousDistance, to: distance, velocity: 4) //TODO:
                         }
                         
                         #if targetEnvironment(simulator)
                         // Trigger drum hit
                         guard let drumId = DrumID(rawValue: value.entity.name) else { return }
-                        drumController.hitDrum(drum: drumId, strikeSpeed: nil)
+                        drumController.hitDrum(drum: drumId, strikeSpeed: nil, isHiHatClosed: appState.isHiHatClosed)
                         
                         // Start simulator sweep test at tap position
                         let local = value.location3D
@@ -105,11 +107,11 @@ struct ImmersiveView: View {
                 await setupDrumSet(drumSet: newSetID)
             }
         })
-        .onChange(of: pedals.hiHat.distance, {_, newDistance in
-            updateHiHatPosition(distance: newDistance)
+        .onChange(of: pedals.hiHat.distance, {oldDistance, newDistance in
+            onChangeHiHatTopPosition(from: oldDistance, to: newDistance, velocity: pedals.hiHat.velocity)
         })
-        .onChange(of: pedals.kick.distance, {_, newDistance in
-            updateBassDrumPosition(distance: newDistance)
+        .onChange(of: pedals.kick.distance, {oldDistance, newDistance in
+            onChangeBassDrumPedalPosition(from: oldDistance, to: newDistance, velocity: pedals.kick.velocity)
         })
         .onChange(of: pedals.isControllerConnected, {_, isConnected in
             self.bassDrumPedalEntity?.isEnabled = isConnected
@@ -128,6 +130,53 @@ struct ImmersiveView: View {
         #endif // targetEnvironment(simulator)
     }
     
+    private func onChangeHiHatTopPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
+        moveHiHatTopEntity(distance: distance)
+
+        let wasClosed = appState.isHiHatClosed
+        let isClosed = distance == 0.0
+    
+        // Trigger onHiHatClosed when pedal is pressed down
+        if (!wasClosed && isClosed) {
+            drumController.hitDrum(drum: .target_hi_hat_chick, strikeSpeed: velocity, isHiHatClosed: appState.isHiHatClosed)
+        }
+
+        // Publish only if state changed
+        if (appState.isHiHatClosed != isClosed) {
+            appState.isHiHatClosed = isClosed
+        }
+    }
+    
+    private func moveHiHatTopEntity(distance: Float) {
+        // drum models have different scale, therefore we use a easy fix and hard code different values
+        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
+        
+        if (pedals.isControllerConnected) {
+            hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
+        } else { // with animation
+            hiHatTopEntity?.move(to: Transform(translation: hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)),
+                relativeTo: hiHatTopEntity?.parent,
+                duration: 0.25
+            )
+        }
+    }
+
+    private func onChangeBassDrumPedalPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
+        moveBassDrumPedalPosition(distance: distance)
+        
+        if (distance == 0.0 && previousDistance != 0.0) {
+            drumController.hitDrum(
+                drum: .target_bass_drum,
+                strikeSpeed: velocity,
+                isHiHatClosed: appState.isHiHatClosed
+            )
+        }
+    }
+
+    private func moveBassDrumPedalPosition(distance: Float) {
+        bassDrumPedalEntity?.position = bassDrumPedalRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
+    }
+
     
     // MARK: Drum Set Entities
     
@@ -210,29 +259,12 @@ struct ImmersiveView: View {
         hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, pedals.hiHat.distance * maxLift)
     }
     
-    private func updateHiHatPosition(distance: Float) {
-        // drum models have different scale, therefore we use a easy fix and hard code different values
-        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
-        
-        if (pedals.isControllerConnected) {
-            hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
-        } else { // with animation
-            hiHatTopEntity?.move(to: Transform(translation: hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)),
-                relativeTo: hiHatTopEntity?.parent,
-                duration: 0.25
-            )
-        }
-    }
     
     private func setupBassDrumPedal(entity: ModelEntity) {
         self.bassDrumPedalEntity = entity
         self.bassDrumPedalRestPosition = entity.position
         self.bassDrumPedalEntity?.isEnabled = pedals.isControllerConnected
-        updateBassDrumPosition(distance: pedals.kick.distance)
-    }
-    
-    private func updateBassDrumPosition(distance: Float) {
-        bassDrumPedalEntity?.position = bassDrumPedalRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
+        moveBassDrumPedalPosition(distance: pedals.kick.distance)
     }
     
     // MARK: Drum Sticks
@@ -398,7 +430,7 @@ struct ImmersiveView: View {
                let drumId = DrumID(rawValue: hit.entity.name) {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
-                drumController.hitDrum(drum: drumId, strikeSpeed: strikeSpeed)
+                drumController.hitDrum(drum: drumId, strikeSpeed: strikeSpeed, isHiHatClosed: appState.isHiHatClosed)
                 wiggleDrum(drum: hit.entity, hitWorldPosition: hit.position, strikeSpeed: strikeSpeed)
                 
                 #if targetEnvironment(simulator)
@@ -461,8 +493,10 @@ struct ImmersiveView: View {
         let clampedSpeed: Float = min(max(strikeSpeed, 0.2), 6.0)
 
         // Hi-hat pedal dampening
-        let isHiHatTop = drum.name == DrumID.target_hi_hat_top.rawValue
-        let hiHatFactor: Float? = isHiHatTop ? max(0.03, pedals.hiHat.distance) : nil
+        var hiHatFactor: Float? = nil
+        if (drum.name == DrumID.target_hi_hat_top.rawValue) {
+            hiHatFactor = appState.isHiHatClosed ? 0.03 : max(0.03, pedals.hiHat.distance) // TODO: 
+        }
 
         let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
 

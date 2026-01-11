@@ -27,7 +27,6 @@ final class FootPedalManager: ObservableObject {
     // MARK: - Pedal State
 
     struct PedalState {
-        var isTouching: Bool = false
         var distance: Float = 1.0
         var velocity: Float = 0.0
         var lastDistance: Float = 1.0
@@ -61,19 +60,6 @@ final class FootPedalManager: ObservableObject {
         }
         
         GCController.startWirelessControllerDiscovery {}
-    }
-
-    /// Method for toggling the hi-hat without a press/release state.
-    /// Used for the alternative interaction of tapping the hi-hat model.
-    @MainActor func toggleHiHat() {
-        if self.hiHat.isTouching {
-            self.hiHat.distance = 1.0
-            self.hiHat.isTouching = false
-        } else {
-            self.hiHat.distance = 0.0
-            self.hiHat.velocity = 5.0
-            self.hiHat.isTouching = true
-        }
     }
     
     // MARK: - Controller Mapping
@@ -159,7 +145,6 @@ final class FootPedalManager: ObservableObject {
                                                 
         pedal.velocity = deltaDistance / Float(deltaTime)
         pedal.distance = distance
-        pedal.isTouching = distance == 0
         
         pedal.lastDistance = distance
         pedal.lastTime = now
