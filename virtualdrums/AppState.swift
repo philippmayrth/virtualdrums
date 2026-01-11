@@ -31,8 +31,18 @@ class AppState: ObservableObject {
             // - every time `selectedDrumKit` changes
             .sink { kit in
                 AudioEngine.shared.setDrumKit(kit: kit)
+                // Send to MIDI bridge
+                MIDIBridgeClient.shared.sendKitSelection(drumKit: kit)
             }
             // Store the subscription so it stays active for the lifetime of AppState
+            .store(in: &cancellables)
+
+        // Observe changes to `selectedDrumSet`
+        $selectedDrumSet
+            .sink { drumSet in
+                // Send to MIDI bridge
+                MIDIBridgeClient.shared.sendKitSelection(soundKit: drumSet)
+            }
             .store(in: &cancellables)
 
         #if targetEnvironment(simulator)

@@ -37,6 +37,11 @@ struct ContentTabView: View {
                     }
                 }
 
+            MIDIBridgeSettingsView()
+                .tabItem {
+                    Label("MIDI Bridge", systemImage: "cable.connector")
+                }
+
             InfoView()
                 .environmentObject(appState)
                 .tabItem {

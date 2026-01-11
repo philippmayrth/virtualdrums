@@ -11,5 +11,11 @@
 		<key>UISceneConfigurations</key>
 		<dict/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>VirtualDrums needs local network access to communicate with the MIDI bridge on your Mac.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
 </dict>
 </plist>

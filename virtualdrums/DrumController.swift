@@ -88,14 +88,20 @@ class DrumController: ObservableObject {
                 ? (FootPedalManager.shared.isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
                 : drum
         
+        let volume: Float
         if (strikeSpeed != nil) {
-            let volume: Float = calculateVolume(forSpeed: strikeSpeed!)
+            volume = calculateVolume(forSpeed: strikeSpeed!)
             AudioEngine.shared.playSound(drum: soundToPlay, volume: volume)
         } else {
+            volume = 1.0
             AudioEngine.shared.playSound(drum: soundToPlay)
         }
    
         print("🥁 Hit drum: \(soundToPlay.rawValue)")
+        
+        // Send to MIDI bridge
+        let normalizedVelocity = min(max(volume / 3.0, 0.0), 1.0) // Normalize volume to 0-1
+        MIDIBridgeClient.shared.sendDrumHit(drum: soundToPlay, velocity: normalizedVelocity)
     }
     
     // MARK: Hi-hat Pedal

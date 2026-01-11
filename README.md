@@ -7,8 +7,57 @@ A virtual DrumKit that runs on the Apple Vision Pro.
 Im Projekt Virtual Drums haben wir uns die Frage gestellt, wie zukunftstauglich VR-Technologie tatsächlich ist. Als Plattform nutzen wir die Apple Vision Pro, programmiert mit Swift. Am besten lässt sich Technik evaluieren, indem man sie praktisch ausprobiert – daher haben wir ein virtuelles Drum Kit entwickelt. Inspiriert vom klassischen Instrument soll es die Möglichkeit bieten, mit der Apple Vision Pro Musik zu machen.
 Ein echtes Drum Kit zu ersetzen ist nicht Ziel dieses Projekts. Der eigentliche Mehrwert liegt darin, dass auch Musikerinnen und Musiker ohne Schlagzeugkenntnisse Beats für eigene Songs entwickeln können, ohne dabei auf die herkömmliche Drum-Sequenzer-Programmierung angewiesen zu sein.
 
+## 🎹 NEW: MIDI Bridge Integration
+
+**Record your VR drum performances in Logic Pro!**
+
+We've added a complete MIDI bridge system that lets you send drum events from the VR app to Logic Pro (or any DAW) for professional recording and production.
+
+### Quick Start
+
+```bash
+# 1. Start the Python MIDI bridge
+cd midi_bridge
+./start.sh
+
+# 2. Open Logic Pro and configure MIDI input
+# 3. Build and run the VR app
+# 4. Start drumming - Logic records MIDI!
+```
+
+### Documentation
+
+All MIDI bridge documentation is located in the [midi_bridge/](midi_bridge/) folder:
+
+- **[GETTING_STARTED.md](midi_bridge/GETTING_STARTED.md)** - Step-by-step setup (start here!)
+- **[QUICK_REFERENCE.md](midi_bridge/QUICK_REFERENCE.md)** - One-page cheat sheet
+- **[MIDI_SETUP.md](midi_bridge/MIDI_SETUP.md)** - Complete documentation
+- **[ARCHITECTURE_DIAGRAMS.md](midi_bridge/ARCHITECTURE_DIAGRAMS.md)** - System architecture
+- **[PROJECT_COMPLETION.md](midi_bridge/PROJECT_COMPLETION.md)** - Implementation summary
+
+### Features
+
+- 🥁 HTTP → MIDI translation (all drum events)
+- 🎹 Virtual MIDI port ("VRDrumkit Virtual Out")
+- 🎨 Kit selection with MIDI CC/Program Change
+- 🔊 Optional local audio playback
+- ⚙️ Settings UI in VR app
+- 📡 Works over WiFi or Ethernet
+- 🎵 Ready for Logic Pro, Ableton, etc.
+
+### Architecture
+
+```
+VR App (Vision Pro) → HTTP → Python Bridge → MIDI → Logic Pro
+```
+
+See [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md) for detailed diagrams.
+
+---
+
 ## App Versions (Git Tags)
 
+- **2.0**: MIDI Bridge integration - record drums in Logic Pro! 🎹
 - **1.4**: Tap gesture alternative for hi-hat pedal, Hand Grip Detection, Hi-Hat Cymbal & Kick Pedal move dynamically with controller trigger
 - **1.3**: GameController input for foot pedals
 - **1.2**: Keyboard input for foot pedals
