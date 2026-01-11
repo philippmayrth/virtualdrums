@@ -112,7 +112,7 @@ struct ImmersiveView: View {
             updateBassDrumPosition(distance: newDistance)
         })
         .onChange(of: pedals.isControllerConnected, {_, isConnected in
-            bassDrumPedalEntity?.isEnabled = isConnected 
+            self.bassDrumPedalEntity?.isEnabled = isConnected
         })
         #if targetEnvironment(simulator)
         .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
@@ -227,7 +227,7 @@ struct ImmersiveView: View {
     private func setupBassDrumPedal(entity: ModelEntity) {
         self.bassDrumPedalEntity = entity
         self.bassDrumPedalRestPosition = entity.position
-        self.bassDrumPedalEntity?.isEnabled = false
+        self.bassDrumPedalEntity?.isEnabled = pedals.isControllerConnected
         updateBassDrumPosition(distance: pedals.kickPedalDistance)
     }
     
