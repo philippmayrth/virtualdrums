@@ -105,10 +105,10 @@ struct ImmersiveView: View {
                 await setupDrumSet(drumSet: newSetID)
             }
         })
-        .onChange(of: pedals.hiHatPedalDistance, {_, newDistance in
+        .onChange(of: pedals.hiHat.distance, {_, newDistance in
             updateHiHatPosition(distance: newDistance)
         })
-        .onChange(of: pedals.kickPedalDistance, {_, newDistance in
+        .onChange(of: pedals.kick.distance, {_, newDistance in
             updateBassDrumPosition(distance: newDistance)
         })
         .onChange(of: pedals.isControllerConnected, {_, isConnected in
@@ -207,7 +207,7 @@ struct ImmersiveView: View {
         self.hiHatRestPosition = entity.position
         entity.components.set(InputTargetComponent())
         let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
-        hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, pedals.hiHatPedalDistance * maxLift)
+        hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, pedals.hiHat.distance * maxLift)
     }
     
     private func updateHiHatPosition(distance: Float) {
@@ -228,7 +228,7 @@ struct ImmersiveView: View {
         self.bassDrumPedalEntity = entity
         self.bassDrumPedalRestPosition = entity.position
         self.bassDrumPedalEntity?.isEnabled = pedals.isControllerConnected
-        updateBassDrumPosition(distance: pedals.kickPedalDistance)
+        updateBassDrumPosition(distance: pedals.kick.distance)
     }
     
     private func updateBassDrumPosition(distance: Float) {
@@ -462,7 +462,7 @@ struct ImmersiveView: View {
 
         // Hi-hat pedal dampening
         let isHiHatTop = drum.name == DrumID.target_hi_hat_top.rawValue
-        let hiHatFactor: Float? = isHiHatTop ? max(0.03, pedals.hiHatPedalDistance) : nil
+        let hiHatFactor: Float? = isHiHatTop ? max(0.03, pedals.hiHat.distance) : nil
 
         let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
 

@@ -43,25 +43,27 @@ class DrumController: ObservableObject {
     private func bindFootPedals() {
 
         // Kick drum pedal
-        pedal.$isKickHit
+        pedal.$kick
+            .map(\.isTouching)
             .removeDuplicates()
             .filter { $0 } // only on hit
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.hitDrum(
                     drum: .target_bass_drum,
-                    strikeSpeed: pedal.kickVelocity
+                    strikeSpeed: pedal.kick.velocity
                 )
             }
             .store(in: &cancellables)
 
         // Hi-hat pedal ("chick")
-        pedal.$isHiHatClosed
+        pedal.$hiHat
+            .map(\.isTouching)
             .removeDuplicates()
             .sink { [weak self] closed in
                 guard let self else { return }
                 if closed {
-                    self.onHiHatClosed(velocity: pedal.hiHatVelocity)
+                    self.onHiHatClosed(velocity: pedal.hiHat.velocity)
                 } else {
                     // onHiHatOpened
                 }
@@ -85,7 +87,7 @@ class DrumController: ObservableObject {
     func hitDrum(drum: DrumID, strikeSpeed: Float?) {
         let soundToPlay: DrumID =
                 drum == .target_hi_hat_top
-                ? (FootPedalManager.shared.isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
+                ? (FootPedalManager.shared.hiHat.isTouching ? .target_hi_hat_closed : .target_hi_hat_open)
                 : drum
         
         let volume: Float
