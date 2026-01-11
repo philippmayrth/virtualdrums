@@ -25,33 +25,48 @@ class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Observe changes to `selectedDrumKit`
+        bindAudioEngine()
+        bindMIDIBridge()
+        bindSimulator()
+    }
+
+    /// Routes UI kit selection into the audio engine.
+    private func bindAudioEngine() {
         $selectedDrumKit
-            // This sink is called:
-            // - immediately with the initial value
-            // - every time `selectedDrumKit` changes
+            .removeDuplicates()
             .sink { kit in
                 AudioEngine.shared.setDrumKit(kit: kit)
-                // Send to MIDI bridge
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Routes UI kit selections to external MIDI hardware.
+    private func bindMIDIBridge() {
+        $selectedDrumKit
+            .removeDuplicates()
+            .sink { kit in
                 MIDIBridgeClient.shared.sendKitSelection(drumKit: kit)
             }
-            // Store the subscription so it stays active for the lifetime of AppState
             .store(in: &cancellables)
 
-        // Observe changes to `selectedDrumSet`
         $selectedDrumSet
-            .sink { drumSet in
-                // Send to MIDI bridge
-                MIDIBridgeClient.shared.sendKitSelection(soundKit: drumSet)
+            .removeDuplicates()
+            .sink { set in
+                MIDIBridgeClient.shared.sendKitSelection(soundKit: set)
             }
             .store(in: &cancellables)
+    }
 
-        #if targetEnvironment(simulator)
+    #if targetEnvironment(simulator)
+    /// Ensures simulator sub-state updates propagate to SwiftUI.
+    private func bindSimulator() {
         simulator.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
-        #endif // targetEnvironment(simulator)
     }
+    #else
+    private func bindSimulator() {}
+    #endif // targetEnvironment(simulator)
 }
