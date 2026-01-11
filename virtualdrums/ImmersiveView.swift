@@ -163,7 +163,7 @@ struct ImmersiveView: View {
                 if DrumID(rawValue: childEntity.name) != nil { // must be a recognized drum (→ named "target_[drum_piece]")
                     await setupDrum(entity: childEntity)
                     
-                    if (entity.name == DrumID.target_hi_hat_top.rawValue) { // setup extra config for hi hat
+                    if (childEntity.name == DrumID.target_hi_hat_top.rawValue) { // setup extra config for hi hat
                         setupHiHat(entity: childEntity)
                     }
                 }
