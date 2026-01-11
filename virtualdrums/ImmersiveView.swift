@@ -35,9 +35,9 @@ struct ImmersiveView: View {
     @State private var updateSub: EventSubscription?
     @State private var rootDrumEntity = Entity()
     @State private var hiHatTopEntity: ModelEntity?
-    @State private var hiHatRestPosition: SIMD3<Float> = .zero
-    @State private var bassDrumPedalEntity: ModelEntity?
-    @State private var bassDrumPedalRestPosition: SIMD3<Float> = .zero
+    @State private var hiHatTopRestPosition: SIMD3<Float> = .zero
+    @State private var bassDrumBeaterEntity: ModelEntity?
+    @State private var bassDrumBeaterRestPosition: SIMD3<Float> = .zero
     @State private var drumRestOrientations: [Entity.ID: simd_quatf] = [:]
     @State private var bassDrumEntity: ModelEntity? // store to save lookup
 
@@ -110,10 +110,10 @@ struct ImmersiveView: View {
             onChangeHiHatTopPosition(from: oldDistance, to: newDistance, velocity: pedals.hiHat.velocity)
         })
         .onChange(of: pedals.kick.distance, {oldDistance, newDistance in
-            onChangeBassDrumPedalPosition(from: oldDistance, to: newDistance, velocity: pedals.kick.velocity)
+            onChangeBassDrumBeaterPosition(from: oldDistance, to: newDistance, velocity: pedals.kick.velocity)
         })
         .onChange(of: pedals.isControllerConnected, {_, isConnected in
-            self.bassDrumPedalEntity?.isEnabled = isConnected
+            self.bassDrumBeaterEntity?.isEnabled = isConnected
         })
         #if targetEnvironment(simulator)
         .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
@@ -166,26 +166,26 @@ struct ImmersiveView: View {
         let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
         
         if (pedals.isControllerConnected) {
-            hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
+            hiHatTopEntity?.position = hiHatTopRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
         } else { // with animation
-            hiHatTopEntity?.move(to: Transform(translation: hiHatRestPosition + SIMD3<Float>(0, 0, distance * maxLift)),
+            hiHatTopEntity?.move(to: Transform(translation: hiHatTopRestPosition + SIMD3<Float>(0, 0, distance * maxLift)),
                 relativeTo: hiHatTopEntity?.parent,
                 duration: 0.25
             )
         }
     }
 
-    private func onChangeBassDrumPedalPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
-        moveBassDrumPedalPosition(distance: distance)
+    private func onChangeBassDrumBeaterPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
+        moveBassDrumBeaterPosition(distance: distance)
         
         if (distance == 0.0 && previousDistance != 0.0) {
-            let hitWorldPosition = bassDrumPedalEntity!.position(relativeTo: nil)
+            let hitWorldPosition = bassDrumBeaterEntity!.position(relativeTo: nil)
             onDrumHit(drumID: .target_bass_drum, drumEntity: bassDrumEntity!, hitWorldPosition: hitWorldPosition, velocity: velocity)
         }
     }
 
-    private func moveBassDrumPedalPosition(distance: Float) {
-        bassDrumPedalEntity?.position = bassDrumPedalRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
+    private func moveBassDrumBeaterPosition(distance: Float) {
+        bassDrumBeaterEntity?.position = bassDrumBeaterRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
     }
 
     
@@ -230,7 +230,7 @@ struct ImmersiveView: View {
                     }
                 }
                 else if childEntity.name == "bass_drum_pedal" {
-                    setupBassDrumPedal(entity: childEntity)
+                    setupBassDrumBeater(entity: childEntity)
                 }
                 
             }
@@ -266,18 +266,18 @@ struct ImmersiveView: View {
     
     private func setupHiHat(entity: ModelEntity) {
         self.hiHatTopEntity = entity
-        self.hiHatRestPosition = entity.position
+        self.hiHatTopRestPosition = entity.position
         entity.components.set(InputTargetComponent())
         let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
-        hiHatTopEntity?.position = hiHatRestPosition + SIMD3<Float>(0, 0, pedals.hiHat.distance * maxLift)
+        hiHatTopEntity?.position = hiHatTopRestPosition + SIMD3<Float>(0, 0, pedals.hiHat.distance * maxLift)
     }
     
     
-    private func setupBassDrumPedal(entity: ModelEntity) {
-        self.bassDrumPedalEntity = entity
-        self.bassDrumPedalRestPosition = entity.position
-        self.bassDrumPedalEntity?.isEnabled = pedals.isControllerConnected
-        moveBassDrumPedalPosition(distance: pedals.kick.distance)
+    private func setupBassDrumBeater(entity: ModelEntity) {
+        self.bassDrumBeaterEntity = entity
+        self.bassDrumBeaterRestPosition = entity.position
+        self.bassDrumBeaterEntity?.isEnabled = pedals.isControllerConnected
+        moveBassDrumBeaterPosition(distance: pedals.kick.distance)
     }
     
     // MARK: Drum Sticks
