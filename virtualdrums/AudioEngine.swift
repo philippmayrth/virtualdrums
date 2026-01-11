@@ -20,6 +20,7 @@ final class AudioEngine: ObservableObject {
     // MARK: - Audio Engine
     
     @Published var isReady: Bool = false
+    @Published var localAudioMuted: Bool = false // Mute local sounds for recording
     private var audioPlayers: [DrumID: [AVAudioPlayer]] = [:]
     private var currentPlayerIndex: [DrumID: Int] = [:]
     private let maxPolyphony: Int
@@ -31,6 +32,9 @@ final class AudioEngine: ObservableObject {
     }
     
     func playSound(drum: DrumID, volume: Float = 1, pitch: Float = 1) {
+        // Don't play if local audio is muted (for recording with DAW monitoring)
+        guard !localAudioMuted else { return }
+        
         guard let players = audioPlayers[drum], !players.isEmpty else {
             print("⚠️ No audio player available for drum: \(drum)")
             return

@@ -10,6 +10,7 @@ import SwiftUI
 struct MIDIBridgeSettingsView: View {
     @State private var bridgeURL: String = MIDIBridgeClient.shared.baseURL
     @State private var isEnabled: Bool = MIDIBridgeClient.shared.isEnabled
+    @State private var localAudioMuted: Bool = AudioEngine.shared.localAudioMuted
     @State private var connectionStatus: ConnectionStatus = .unknown
     @State private var statusMessage: String = ""
     
@@ -43,6 +44,11 @@ struct MIDIBridgeSettingsView: View {
                         MIDIBridgeClient.shared.isEnabled = newValue
                     }
                 
+                Toggle("Mute VR Audio", isOn: $localAudioMuted)
+                    .onChange(of: localAudioMuted) { oldValue, newValue in
+                        AudioEngine.shared.localAudioMuted = newValue
+                    }
+                
                 HStack {
                     Text("Server URL")
                     Spacer()
@@ -59,6 +65,9 @@ struct MIDIBridgeSettingsView: View {
                 }
             } header: {
                 Text("Settings")
+            } footer: {
+                Text("Enable 'Mute VR Audio' to only hear Logic Pro sounds during recording (prevents double audio).")
+                    .font(.caption2)
             }
             
             Section {
