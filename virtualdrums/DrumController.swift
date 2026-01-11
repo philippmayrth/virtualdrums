@@ -29,41 +29,37 @@ class DrumController: ObservableObject {
         }
     }
     
-    /// Generic drum hit (used by hands, sticks, etc.)
-    func hitDrum(drum: DrumID, strikeSpeed: Float?, isHiHatClosed: Bool) {
-        if (drum == .target_hi_hat_chick) {
+    func hitDrum(drum: DrumID, velocity: Float) {
+        if drum == .target_hi_hat_chick {
             AudioEngine.shared.stopDrum(drum: .target_hi_hat_open)
         }
         
-        let soundToPlay: DrumID =
-                drum == .target_hi_hat_top
-                ? (isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open)
-                : drum
-        
-        let volume: Float
-        if (strikeSpeed != nil) {
-            volume = calculateVolume(forSpeed: strikeSpeed!)
-            AudioEngine.shared.playSound(drum: soundToPlay, volume: volume)
-        } else {
-            volume = 1.0
-            AudioEngine.shared.playSound(drum: soundToPlay)
-        }
-   
-        print("🥁 Hit drum: \(soundToPlay.rawValue)")
-        
-        // Send to MIDI bridge
-        let normalizedVelocity = min(max(volume / 3.0, 0.0), 1.0) // Normalize volume to 0-1
-        MIDIBridgeClient.shared.sendDrumHit(drum: soundToPlay, velocity: normalizedVelocity)
+        let volume = calculateVolume(for: velocity)
+                       
+        play(drum, volume: volume)
+        sendMIDI(drum, volume: volume)
+    }
+    
+    // MARK: - Playback
+
+    private func play(_ drum: DrumID, volume: Float) {
+        AudioEngine.shared.playSound(drum: drum, volume: volume)
+        print("🥁 Hit drum:", drum.rawValue)
     }
 
-    // MARK: Velocity → Volume Mapping
-    
-    private func calculateVolume(forSpeed speed: Float) -> Float {
-        let minSpeed: Float = 0.1
-        let maxSpeed: Float = 15.0
+    private func sendMIDI(_ drum: DrumID, volume: Float) {
+        let normalizedVelocity = min(max(volume / 3.0, 0.0), 1.0)
+        MIDIBridgeClient.shared.sendDrumHit(drum: drum, velocity: normalizedVelocity)
+    }
 
-        let clampedSpeed = min(max(speed, minSpeed), maxSpeed)
-        let normalized = (clampedSpeed - minSpeed) / (maxSpeed - minSpeed)
+    // MARK: Velocity → Volume
+    
+    private func calculateVolume(for velocity: Float) -> Float {
+        let minVelocity: Float = 0.1
+        let maxVelocity: Float = 15.0
+
+        let clampedVelocity = min(max(velocity, minVelocity), maxVelocity)
+        let normalized = (clampedVelocity - minVelocity) / (maxVelocity - minVelocity)
 
         let minVolume: Float = 0.1
         let maxVolume: Float = 3

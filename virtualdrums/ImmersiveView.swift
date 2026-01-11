@@ -39,6 +39,7 @@ struct ImmersiveView: View {
     @State private var bassDrumPedalEntity: ModelEntity?
     @State private var bassDrumPedalRestPosition: SIMD3<Float> = .zero
     @State private var drumRestOrientations: [Entity.ID: simd_quatf] = [:]
+    @State private var bassDrumEntity: ModelEntity? // store to save lookup
 
     #if targetEnvironment(simulator)
     @State var simulatorStickState: StickState?
@@ -85,8 +86,7 @@ struct ImmersiveView: View {
                         
                         #if targetEnvironment(simulator)
                         // Trigger drum hit
-                        guard let drumId = DrumID(rawValue: value.entity.name) else { return }
-                        drumController.hitDrum(drum: drumId, strikeSpeed: nil, isHiHatClosed: appState.isHiHatClosed)
+                        guard let drumID = DrumID(rawValue: value.entity.name) else { return }
                         
                         // Start simulator sweep test at tap position
                         let local = value.location3D
@@ -95,8 +95,7 @@ struct ImmersiveView: View {
                         startSimulatorSweep(at: worldPosition)
 
                         // TODO: calculate correct world position
-                        wiggleDrum(drum: value.entity, hitWorldPosition: worldPosition, strikeSpeed: 3.0)                             
-
+                        onDrumHit(drumID: drumID, drumEntity: value.entity, position: worldPosition, velocity: 3.0)
                         #endif // targetEnvironment(simulator)
                     }
             )
@@ -130,6 +129,20 @@ struct ImmersiveView: View {
         #endif // targetEnvironment(simulator)
     }
     
+    private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float) {
+        animateHit(
+            entity: drumEntity,
+            hitWorldPosition: hitWorldPosition,
+            velocity: velocity
+        )
+        
+        var resolvedDrumID = drumID
+        if drumID == .target_hi_hat_top {
+            resolvedDrumID = appState.isHiHatClosed ? .target_hi_hat_closed : .target_hi_hat_open
+        }
+        drumController.hitDrum(drum: resolvedDrumID, velocity: velocity)
+    }
+    
     private func onChangeHiHatTopPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
         moveHiHatTopEntity(distance: distance)
 
@@ -138,7 +151,8 @@ struct ImmersiveView: View {
     
         // Trigger onHiHatClosed when pedal is pressed down
         if (!wasClosed && isClosed) {
-            drumController.hitDrum(drum: .target_hi_hat_chick, strikeSpeed: velocity, isHiHatClosed: appState.isHiHatClosed)
+            let hitWorldPosition = hiHatTopEntity!.position(relativeTo: nil)
+            onDrumHit(drumID: .target_hi_hat_chick, drumEntity: hiHatTopEntity!, hitWorldPosition: hitWorldPosition, velocity: velocity)
         }
 
         // Publish only if state changed
@@ -165,11 +179,8 @@ struct ImmersiveView: View {
         moveBassDrumPedalPosition(distance: distance)
         
         if (distance == 0.0 && previousDistance != 0.0) {
-            drumController.hitDrum(
-                drum: .target_bass_drum,
-                strikeSpeed: velocity,
-                isHiHatClosed: appState.isHiHatClosed
-            )
+            let hitWorldPosition = bassDrumPedalEntity!.position(relativeTo: nil)
+            onDrumHit(drumID: .target_bass_drum, drumEntity: bassDrumEntity!, hitWorldPosition: hitWorldPosition, velocity: velocity)
         }
     }
 
@@ -214,6 +225,8 @@ struct ImmersiveView: View {
                     
                     if (childEntity.name == DrumID.target_hi_hat_top.rawValue) { // setup extra config for hi hat
                         setupHiHat(entity: childEntity)
+                    } else if (childEntity.name == DrumID.target_bass_drum.rawValue) {
+                        self.bassDrumEntity = childEntity
                     }
                 }
                 else if childEntity.name == "bass_drum_pedal" {
@@ -430,8 +443,7 @@ struct ImmersiveView: View {
                let drumId = DrumID(rawValue: hit.entity.name) {
                 // stick hit against the up/drum side --> mark stick as inside and play sound
                 s.isInsideDrum = true
-                drumController.hitDrum(drum: drumId, strikeSpeed: strikeSpeed, isHiHatClosed: appState.isHiHatClosed)
-                wiggleDrum(drum: hit.entity, hitWorldPosition: hit.position, strikeSpeed: strikeSpeed)
+                onDrumHit(drumID: drumId, drumEntity: hit.entity, hitWorldPosition: hit.position, velocity: strikeSpeed)
                 
                 #if targetEnvironment(simulator)
                 updateDebugHitAccepted(drumName: hit.entity.name)
@@ -451,18 +463,18 @@ struct ImmersiveView: View {
     }
     
     @MainActor
-    private func wiggleDrum(
-        drum: Entity,
+    private func animateHit(
+        entity: Entity,
         hitWorldPosition: SIMD3<Float>,
-        strikeSpeed: Float
+        velocity: Float
     ) {
-        guard let restOrientation = drumRestOrientations[drum.id] else { return }
+        guard let restOrientation = drumRestOrientations[entity.id] else { return }
 
-        let center = drum.position(relativeTo: nil)
+        let center = entity.position(relativeTo: nil)
         let rawHitDir = hitWorldPosition - center
         
         // Get the entity UP vector (direction of the drum surface)
-        let transform = drum.transformMatrix(relativeTo: nil)
+        let transform = entity.transformMatrix(relativeTo: nil)
         let drumNormal = normalize(SIMD3<Float>(
             transform.columns.2.x,
             transform.columns.2.y,
@@ -475,7 +487,7 @@ struct ImmersiveView: View {
         let hitDir = normalize(hitDirInPlane)
         let worldTiltAxis = normalize(cross(drumNormal, hitDir))
         let localTiltAxis = normalize(
-            drum.convert(direction: worldTiltAxis, from: nil)
+            entity.convert(direction: worldTiltAxis, from: nil)
         )
        
         // Hit radius (distance from center)
@@ -483,19 +495,19 @@ struct ImmersiveView: View {
 
         // Tuned drum radius (world units)
         
-        let bounds = drum.visualBounds(relativeTo: nil)
+        let bounds = entity.visualBounds(relativeTo: nil)
         let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
         
         // Radius factor (0.0 - 1.0), influences tilt angle
         let radiusFactor = min(hitRadius / radius, 1.0)
 
         // strikeSpeed → angle
-        let clampedSpeed: Float = min(max(strikeSpeed, 0.2), 6.0)
+        let clampedSpeed: Float = min(max(velocity, 0.2), 6.0)
 
         // Hi-hat pedal dampening
         var hiHatFactor: Float? = nil
-        if (drum.name == DrumID.target_hi_hat_top.rawValue) {
-            hiHatFactor = appState.isHiHatClosed ? 0.03 : max(0.03, pedals.hiHat.distance) // TODO: 
+        if (entity.name == DrumID.target_hi_hat_top.rawValue) {
+            hiHatFactor = appState.isHiHatClosed ? 0.03 : max(0.03, pedals.hiHat.distance) // TODO:
         }
 
         let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
@@ -503,24 +515,24 @@ struct ImmersiveView: View {
 
         let tilt = simd_quatf(angle: angle, axis: localTiltAxis)
 
-        drum.move(
+        entity.move(
             to: Transform(
-                scale: drum.scale,
+                scale: entity.scale,
                 rotation: tilt * restOrientation,
-                translation: drum.position
+                translation: entity.position
             ),
-            relativeTo: drum.parent,
+            relativeTo: entity.parent,
             duration: 0.05,
             timingFunction: .easeOut
         )
 
-        drum.move(
+        entity.move(
             to: Transform(
-                scale: drum.scale,
+                scale: entity.scale,
                 rotation: restOrientation,
-                translation: drum.position
+                translation: entity.position
             ),
-            relativeTo: drum.parent,
+            relativeTo: entity.parent,
             duration: 0.3,
             timingFunction: .easeInOut
         )
