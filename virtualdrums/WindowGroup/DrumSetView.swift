@@ -7,13 +7,6 @@
 
 import SwiftUI
 
-enum DrumSetID: String, CaseIterable, Identifiable {
-    case drum_kit
-    case burgundy_drum
-
-    var id: String { rawValue }
-}
-
 private struct DrumSet: Identifiable {
     let id: DrumSetID
     let label: String

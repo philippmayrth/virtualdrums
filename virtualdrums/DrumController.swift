@@ -10,20 +10,6 @@ import Combine
 import AVFoundation
 import RealityKit
 
-enum DrumID: String, CaseIterable {
-    case target_snare
-    case target_bass_drum // aka. kick
-    case target_floor_tom
-    case target_mid_tom
-    case target_high_tom
-    case target_hi_hat_top // hi-hat entity
-    case target_hi_hat_open // hi-hat sound (stick)
-    case target_hi_hat_closed // hi-hat sound (stick)
-    case target_hi_hat_chick // hi-hat sound (pedal)
-    case target_ride
-    case target_crash
-}
-
 class DrumController: ObservableObject {
     
     // MARK: Singleton

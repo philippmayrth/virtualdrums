@@ -9,14 +9,6 @@ import SwiftUI
 import RealityKit
 import RealityKitContent
 
-enum DrumKitID: String, CaseIterable, Identifiable {
-    case accoustic
-    case electronic
-    case alternative
-
-    var id: String { rawValue }
-}
-
 private struct DrumKit: Identifiable {
     let id: DrumKitID
     let label: String
