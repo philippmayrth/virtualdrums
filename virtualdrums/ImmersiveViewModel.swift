@@ -265,22 +265,14 @@ extension ImmersiveViewModel {
         let tilt = simd_quatf(angle: angle, axis: localTiltAxis)
 
         entity.move(
-            to: Transform(
-                scale: entity.scale,
-                rotation: tilt * restOrientation,
-                translation: entity.position
-            ),
+            to: Transform(rotation: tilt * restOrientation),
             relativeTo: entity.parent,
             duration: 0.05,
             timingFunction: .easeOut
         )
 
         entity.move(
-            to: Transform(
-                scale: entity.scale,
-                rotation: restOrientation,
-                translation: entity.position
-            ),
+            to: Transform(rotation: restOrientation),
             relativeTo: entity.parent,
             duration: 0.3,
             timingFunction: .easeInOut
