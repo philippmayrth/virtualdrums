@@ -118,8 +118,7 @@ final class ImmersiveViewModel: ObservableObject {
             onDrumHit(
                 drumID: .target_hi_hat_chick,
                 drumEntity: hiHatTopEntity!,
-                hitWorldPosition: hitWorldPosition,
-                velocity: 4 // TODO: 
+                hitWorldPosition: hitWorldPosition
             )
         }
 
@@ -137,8 +136,7 @@ final class ImmersiveViewModel: ObservableObject {
             onDrumHit(
                 drumID: .target_bass_drum,
                 drumEntity: bassDrumEntity!,
-                hitWorldPosition: hitWorldPosition,
-                velocity: 4 // TODO: 
+                hitWorldPosition: hitWorldPosition
             )
         }
     }
@@ -165,7 +163,6 @@ final class ImmersiveViewModel: ObservableObject {
                 drumID: drumID,
                 drumEntity: value.entity,
                 hitWorldPosition: worldPosition,
-                velocity: 3.0
             )
         #endif  // targetEnvironment(simulator)
     }
@@ -203,7 +200,7 @@ extension ImmersiveViewModel {
         parent.position = hiHatTopParentRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
     }
     
-    private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float) {
+    private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
         var resolvedDrumID = drumID
         if drumID == .target_hi_hat_top {
             resolvedDrumID = appState.isHiHatClosed
@@ -215,7 +212,7 @@ extension ImmersiveViewModel {
         drumController.onHit(drum: resolvedDrumID, velocity: velocity)
     }
 
-    private func animateHit(entity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float) {
+    private func animateHit(entity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
         guard let restOrientation = drumRestOrientations[entity.id] else {
             return
         }
@@ -252,7 +249,8 @@ extension ImmersiveViewModel {
         let radiusFactor = min(hitRadius / radius, 1.0)
 
         // strikeSpeed → angle
-        let clampedSpeed: Float = min(max(velocity, 0.2), 6.0)
+        let rawSpeed = velocity ?? 3.0
+        let clampedSpeed: Float = min(max(rawSpeed, 0.2), 6.0)
 
         // Hi-hat pedal dampening
         var hiHatFactor: Float? = nil

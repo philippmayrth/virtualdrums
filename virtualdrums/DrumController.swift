@@ -11,11 +11,11 @@ import AVFoundation
 import RealityKit
 
 class DrumController: ObservableObject {
-    
-    // MARK: Singleton
+
     static let shared = DrumController()
     private init() {}
-        
+
+    static let defaultVolume: Float = 1.0
 
     // MARK: Public API
 
@@ -28,8 +28,8 @@ class DrumController: ObservableObject {
             AudioEngine.shared.loadDrumSound(drum: drum)
         }
     }
-    
-    func onHit(drum: DrumID, velocity: Float) {
+
+    func onHit(drum: DrumID, velocity: Float? = nil) {
         let volume = calculateVolume(for: velocity)
                        
         play(drum, volume: volume)
@@ -54,7 +54,9 @@ class DrumController: ObservableObject {
 
     // MARK: Velocity → Volume
     
-    private func calculateVolume(for velocity: Float) -> Float {
+    private func calculateVolume(for velocity: Float? = nil) -> Float {
+        guard let velocity = velocity else { return 1.0 }
+
         let minVelocity: Float = 0.1
         let maxVelocity: Float = 15.0
 
