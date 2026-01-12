@@ -114,7 +114,8 @@ final class AudioEngine: ObservableObject {
     // MARK: - Helpers
 
     private func findAudioFile(named name: String) -> URL? {
-        ["aif", "aiff", "wav", "m4a", "mp3"]
+        ["wav", "aif", "aiff", "m4a", "mp3"]
+            .lazy
             .compactMap { Bundle.main.url(forResource: name, withExtension: $0) }
             .first
     }
