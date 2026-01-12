@@ -106,7 +106,7 @@ final class ImmersiveViewModel: ObservableObject {
         Task { await replaceDrumSet(with: drumSet) }
     }
 
-    func onChangeHiHatTopPosition(from previousDistance: Float,to distance: Float, velocity: Float) {
+    func onChangeHiHatTopPosition(to distance: Float, velocity: Float) {
         moveHiHatTopEntity(distance: distance)
 
         let wasClosed = appState.isHiHatClosed
@@ -151,9 +151,8 @@ final class ImmersiveViewModel: ObservableObject {
 
         if drumID == .target_hi_hat_top {
             // Toggle open/closed
-            let previousDistance: Float = appState.isHiHatClosed ? 0.0 : 1.0
-            let distance: Float = (previousDistance == 1.0) ? 0.0 : 1.0
-            onChangeHiHatTopPosition(from: previousDistance, to: distance, velocity: 4) //TODO:
+            let distance: Float = appState.isHiHatClosed ? 1.0 : 0.0
+            onChangeHiHatTopPosition(to: distance, velocity: 4) //TODO:
         }
 
         #if targetEnvironment(simulator)
@@ -369,11 +368,7 @@ extension ImmersiveViewModel {
 
         entity.components.set(InputTargetComponent())
 
-        // Apply current pedal state instantly
         moveHiHatTopEntity(distance: appState.isHiHatClosed ? 0.0 : 1.0)
-
-        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
-        hiHatTopEntity?.position = hiHatTopRestPosition + SIMD3<Float>(0, 0, footPedalManager.hiHat.distance * maxLift)
     }
 }
 
