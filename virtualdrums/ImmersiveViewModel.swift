@@ -250,7 +250,7 @@ extension ImmersiveViewModel {
 
         // strikeSpeed → angle
         let rawSpeed = velocity ?? 3.0
-        let clampedSpeed: Float = min(max(rawSpeed, 0.2), 6.0)
+        let clampedSpeed: Float = rawSpeed.clamped(to: 0.2...6.0)
 
         // Hi-hat pedal dampening
         var hiHatFactor: Float? = nil

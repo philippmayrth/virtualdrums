@@ -29,7 +29,7 @@ class DrumController: ObservableObject {
 
     func onHit(drum: DrumID, velocity: Float? = nil) {
         let volume = calculateVolume(for: velocity)
-                       
+        
         play(drum, volume: volume)
         sendMIDI(drum, volume: volume)
         
@@ -46,7 +46,7 @@ class DrumController: ObservableObject {
     }
 
     private func sendMIDI(_ drum: DrumID, volume: Float) {
-        let normalizedVelocity = min(max(volume / 3.0, 0.0), 1.0)
+        let normalizedVelocity = (volume / 3.0).clamped(to: 0.0...1.0)
         MIDIBridgeClient.shared.sendDrumHit(drum: drum, velocity: normalizedVelocity)
     }
 
@@ -58,7 +58,8 @@ class DrumController: ObservableObject {
         let minVelocity: Float = 0.1
         let maxVelocity: Float = 15.0
 
-        let clampedVelocity = min(max(velocity, minVelocity), maxVelocity)
+        let clampedVelocity = velocity.clamped(to: minVelocity...maxVelocity)
+        
         let normalized = (clampedVelocity - minVelocity) / (maxVelocity - minVelocity)
 
         let minVolume: Float = 0.1
