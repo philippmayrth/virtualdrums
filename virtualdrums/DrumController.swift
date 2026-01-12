@@ -15,8 +15,6 @@ class DrumController: ObservableObject {
     static let shared = DrumController()
     private init() {}
 
-    static let defaultVolume: Float = 1.0
-
     // MARK: Public API
 
     func onDrumLoaded(_ drum: DrumID) {
@@ -55,7 +53,7 @@ class DrumController: ObservableObject {
     // MARK: Velocity → Volume
     
     private func calculateVolume(for velocity: Float? = nil) -> Float {
-        guard let velocity = velocity else { return 1.0 }
+        guard let velocity = velocity else { return Config.defaultVolume }
 
         let minVelocity: Float = 0.1
         let maxVelocity: Float = 15.0
