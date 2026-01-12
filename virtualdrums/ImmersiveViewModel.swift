@@ -43,7 +43,7 @@ final class ImmersiveViewModel: ObservableObject {
 
     // Hi-hat
     private var hiHatTopEntity: ModelEntity?
-    private var hiHatTopRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
+    private var hiHatTopParentRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
 
     // Kick
     private var bassDrumEntity: ModelEntity?  // store to save lookup
@@ -181,20 +181,26 @@ extension ImmersiveViewModel {
         bassBeater?.position = bassBeaterRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
     }
 
+    /// Opens and closes the hi-hat by translating its parent instead of the cymbal itself.
+    ///
+    /// The cymbal uses `move()` for the hit “wiggle” animation. Changing its transform
+    /// directly for pedal movement would interrupt that animation and leave it tilted.
+    /// Moving the parent lets the pedal motion and hit animation coexist safely.
     private func moveHiHatTopEntity(distance: Float) {
-        // drum models have different scale, therefore we use a easy fix and hard code different values
-        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 0.07 : 4
-        let newPosition = hiHatTopRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
+        guard
+            let hiHat = hiHatTopEntity,
+            let parent = hiHat.parent
+        else { return }
+        
+        // TODO: Models have multiple diffrent parent scales, which first need to be removed, before using the radius for maxLift
+        // // Use the cymbal's actual size so lift scales correctly across drum kits
+        // let bounds = hiHat.visualBounds(relativeTo: parent)
+        // let radius = max(bounds.extents.x, bounds.extents.y) * 0.5
+        // let maxLift = radius * 0.5
+        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 8 : 4
 
-        if footPedalManager.isControllerConnected {
-            hiHatTopEntity?.position = newPosition
-        } else {  // with animation
-            hiHatTopEntity?.move(
-                to: Transform(translation: newPosition),
-                relativeTo: hiHatTopEntity?.parent,
-                duration: 0.25
-            )
-        }
+        
+        parent.position = hiHatTopParentRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
     }
     
     private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float) {
@@ -364,7 +370,7 @@ extension ImmersiveViewModel {
     
     private func setupHiHatTop(entity: ModelEntity) {
         hiHatTopEntity = entity
-        hiHatTopRestPosition = entity.position
+        hiHatTopParentRestPosition = entity.parent!.position
 
         entity.components.set(InputTargetComponent())
 
