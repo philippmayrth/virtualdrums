@@ -19,7 +19,7 @@ class DrumController: ObservableObject {
 
     // MARK: Public API
 
-    func loadDrum(drum: DrumID) {
+    func onDrumLoaded(_ drum: DrumID) {
         if drum == .target_hi_hat_top {
             AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_open)
             AudioEngine.shared.loadDrumSound(drum: .target_hi_hat_closed)
@@ -29,15 +29,15 @@ class DrumController: ObservableObject {
         }
     }
     
-    func hitDrum(drum: DrumID, velocity: Float) {
-        if drum == .target_hi_hat_chick {
-            AudioEngine.shared.stop(.target_hi_hat_open)
-        }
-        
+    func onHit(drum: DrumID, velocity: Float) {
         let volume = calculateVolume(for: velocity)
                        
         play(drum, volume: volume)
         sendMIDI(drum, volume: volume)
+        
+        if drum == .target_hi_hat_chick {
+            AudioEngine.shared.stop(.target_hi_hat_open)
+        }
     }
     
     // MARK: - Playback
