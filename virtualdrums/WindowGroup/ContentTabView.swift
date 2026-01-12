@@ -18,7 +18,7 @@ struct ContentTabView: View {
                     Label {
                         Text("Drums")
                     } icon: {
-                        Image("drum_set")
+                        Image("drum_set").renderingMode(.template)
                     }
                 }
 
@@ -33,7 +33,7 @@ struct ContentTabView: View {
                     Label {
                         Text("Pedals")
                     } icon: {
-                        Image("foot_pedal")
+                        Image("foot_pedal").renderingMode(.template)
                     }
                 }
 
