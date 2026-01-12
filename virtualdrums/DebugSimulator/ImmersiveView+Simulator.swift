@@ -2,14 +2,6 @@ import RealityKit
 import SwiftUI
 
 #if targetEnvironment(simulator)
-    enum SimulatorStickConfig {
-        static let radius: Float = 0.01
-        static let restPosition: SIMD3<Float> = [0, 0.35, -0.35]
-        static let sweepDistance: Float = 0.3
-        static let sweepDurationSeconds: Double = 1.0
-        static let moveStep: Float = 0.02
-    }
-
     extension ImmersiveViewModel {
 
         @MainActor
@@ -18,7 +10,7 @@ import SwiftUI
 
             let stickEntity = makeSimulatorStick()
             let anchor = AnchorEntity(world: .zero)
-            simulatorStickPosition = SimulatorStickConfig.restPosition
+            simulatorStickPosition = Config.simulatorRestPosition
             stickEntity.position = simulatorStickPosition
             anchor.addChild(stickEntity)
             content.add(anchor)
@@ -31,7 +23,7 @@ import SwiftUI
 
         func makeSimulatorStick() -> ModelEntity {
             let mesh = MeshResource.generateSphere(
-                radius: SimulatorStickConfig.radius
+                radius: Config.simulatorStickRadius
             )
             let material = SimpleMaterial(color: .green, isMetallic: false)
             let stickEntity = ModelEntity(mesh: mesh, materials: [material])
@@ -41,7 +33,7 @@ import SwiftUI
             stickEntity.components.set(
                 CollisionComponent(
                     shapes: [
-                        .generateSphere(radius: SimulatorStickConfig.radius)
+                        .generateSphere(radius: Config.simulatorStickRadius)
                     ],
                     filter: .init(group: .stickTipLeft, mask: .drum)
                 )
@@ -81,8 +73,8 @@ import SwiftUI
         }
 
         func runSimulatorSweep(from start: SIMD3<Float>, stick: Entity) async {
-            let distance = SimulatorStickConfig.sweepDistance
-            let duration = SimulatorStickConfig.sweepDurationSeconds
+            let distance = Config.simulatorSweepDistance
+            let duration = Config.simulatorSweepDurationSeconds
             let offsets: [SIMD3<Float>] = [
                 [distance, 0, 0],
                 [-distance, 0, 0],
@@ -141,7 +133,7 @@ import SwiftUI
                 simStickState.tipEntity.position(relativeTo: nil)
             simulatorStickState = simStickState
 
-            simulatorStickPosition = SimulatorStickConfig.restPosition
+            simulatorStickPosition = Config.simulatorRestPosition
             simStickState.stickEntity.setPosition(
                 simulatorStickPosition,
                 relativeTo: nil

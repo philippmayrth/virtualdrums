@@ -1,9 +1,3 @@
-//
-//  DrumKitID.swift
-//  virtualdrums
-//
-//  Created by Oliver Kühle on 11.01.26.
-//
 
 /// Identifies a sound kit used by the audio engine.
 ///

@@ -19,7 +19,7 @@ class MIDIBridgeClient {
     // MARK: - Configuration
     
     /// Bridge server URL (update with your Mac's IP if needed)
-    var baseURL = "http://localhost:5729"
+    var baseURL = Config.MIDIBaseURL
     
     /// Enable/disable bridge communication
     var isEnabled = true

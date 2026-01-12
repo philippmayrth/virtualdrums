@@ -14,14 +14,6 @@ final class HandGripManager: ObservableObject {
     @Published private(set) var isLeftHandGripping = false
     @Published private(set) var isRightHandGripping = false
 
-    // MARK: - Tuning Parameters
-
-    /// Maximum fingertip-to-palm distance for a finger/hand to be considered curled.
-    private let gripThreshold: Float = 0.135
-
-    /// How long the hand must remain open before a grip is released.    
-    private let releaseDelay: UInt64 = 300_000_000 // 300 ms
-
     // MARK: - Internal State
 
     private var pendingReleaseTasks: [HandAnchor.Chirality: Task<Void, Never>] = [:]
@@ -68,7 +60,7 @@ final class HandGripManager: ObservableObject {
         cancelPendingRelease(for: hand)
 
         pendingReleaseTasks[hand] = Task {
-            try? await Task.sleep(nanoseconds: releaseDelay)
+            try? await Task.sleep(nanoseconds: Config.handGripReleaseDelay)
             setGripState(to: false, for: hand)
         }
     }
@@ -119,8 +111,8 @@ final class HandGripManager: ObservableObject {
         let averageOtherFingerDistance =
             otherFingerDistances.reduce(0, +) / Float(otherFingerDistances.count)
 
-        let isIndexCurled = indexToPalm < gripThreshold
-        let isOtherFingersCurled = averageOtherFingerDistance < gripThreshold
+        let isIndexCurled = indexToPalm < Config.handGripThreshold
+        let isOtherFingersCurled = averageOtherFingerDistance < Config.handGripThreshold
 
         return isIndexCurled && isOtherFingersCurled
     }

@@ -19,12 +19,6 @@ struct StickState {
     var isInsideDrum: Bool = false  // Prevents multiple hits while inside the drum
 }
 
-struct StickConfig {
-    static let handleLength: Float = 0.25
-    static let handleRadius: Float = 0.004
-    static let tipRadius: Float = 0.005
-}
-
 @MainActor
 final class ImmersiveViewModel: ObservableObject {
 
@@ -64,7 +58,7 @@ final class ImmersiveViewModel: ObservableObject {
     // Simulator
     #if targetEnvironment(simulator)
         var simulatorStickState: StickState?
-        var simulatorStickPosition: SIMD3<Float> = SimulatorStickConfig.restPosition
+        var simulatorStickPosition: SIMD3<Float> = Config.simulatorRestPosition
         var simulatorSweepTask: Task<Void, Never>?
     #endif  // targetEnvironment(simulator)
 
@@ -170,8 +164,12 @@ final class ImmersiveViewModel: ObservableObject {
 @MainActor
 extension ImmersiveViewModel {
     
+    /// Moves the kick beater towards/away from the drum face.
+    /// The beater is not animated – therefore we can set the position directly.
     private func moveBassBeaterEntity(distance: Float) {
-        bassBeater?.position = bassBeaterRestPosition + SIMD3<Float>(0, -1 * distance * 10, 0)
+        // offset direction is towards the user, away from the drum face (-Z axis)
+        let offset = SIMD3<Float>(0, -(distance * Config.maxBeaterOffset), 0)
+        bassBeater?.position = bassBeaterRestPosition + offset
     }
 
     /// Opens and closes the hi-hat by translating its parent instead of the cymbal itself.
@@ -185,15 +183,15 @@ extension ImmersiveViewModel {
             let parent = hiHat.parent
         else { return }
         
-        // TODO: Models have multiple diffrent parent scales, which first need to be removed, before using the radius for maxLift
-        // // Use the cymbal's actual size so lift scales correctly across drum kits
-        // let bounds = hiHat.visualBounds(relativeTo: parent)
-        // let radius = max(bounds.extents.x, bounds.extents.y) * 0.5
-        // let maxLift = radius * 0.5
-        let maxLift: Float = appState.selectedDrumSet == .burgundy_drum ? 8 : 4
-
+        // TODO: Models have multiple parents with diffrent scales, which first need to be tidied; then use the radius for dynamic maxOffset
         
-        parent.position = hiHatTopParentRestPosition + SIMD3<Float>(0, 0, distance * maxLift)
+        let maxOffset: Float = (appState.selectedDrumSet == .burgundy_drum)
+            ? Config.maxHiHatOffsetBurgundy
+            : Config.maxHiHatOffsetFun
+        
+        // offset direction is upwards, away from hi-hat bottom (Y axis)
+        let offset = SIMD3<Float>(0, 0, distance * maxOffset)
+        parent.position = hiHatTopParentRestPosition + offset
     }
     
     private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
@@ -237,7 +235,6 @@ extension ImmersiveViewModel {
         let hitRadius = simd_length(hitDirInPlane)
 
         // Tuned drum radius (world units)
-
         let bounds = entity.visualBounds(relativeTo: nil)
         let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
 
@@ -245,7 +242,7 @@ extension ImmersiveViewModel {
         let radiusFactor = min(hitRadius / radius, 1.0)
 
         // strikeSpeed → angle
-        let rawSpeed = velocity ?? 3.0
+        let rawSpeed = velocity ?? Config.defaultVelocity
         let clampedSpeed: Float = rawSpeed.clamped(to: 0.2...6.0)
 
         // Hi-hat pedal dampening
@@ -253,7 +250,7 @@ extension ImmersiveViewModel {
         if entity.name == DrumID.target_hi_hat_top.rawValue {
             hiHatFactor = appState.isHiHatClosed
                 ? 0.03
-                : max(0.03, footPedalManager.hiHat.distance)  // TODO:
+                : max(0.03, footPedalManager.hiHat.distance)
         }
 
         let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
@@ -288,7 +285,7 @@ extension ImmersiveViewModel {
 
         do {
             let drumSetEntity = try await Entity(named: drumSet.rawValue, in: .main)
-            drumSetEntity.position = [0, 0.15, -0.6]
+            drumSetEntity.position = Config.drumSetPosition
             drumRootEntity.addChild(drumSetEntity)
 
             await setupTargetsRecursively(for: drumSetEntity)
@@ -402,25 +399,25 @@ extension ImmersiveViewModel {
 
     private func makeStickHandle(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
         let mesh = MeshResource.generateCylinder(
-            height: StickConfig.handleLength,
-            radius: StickConfig.handleRadius
+            height: Config.stickHandleLength,
+            radius: Config.stickHandleRadius
         )
         let material = SimpleMaterial(color: .brown, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = StickConfig.handleLength / 2
+        model.position.y = Config.stickHandleLength / 2
         return model
     }
 
     private func makeStickTip(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity{
-        let mesh = MeshResource.generateSphere(radius: StickConfig.tipRadius)
+        let mesh = MeshResource.generateSphere(radius: Config.stickTipRadius)
         let material = SimpleMaterial(color: .white, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = StickConfig.handleLength
+        model.position.y = Config.stickHandleLength
         model.scale.y = 1.2
 
         model.components.set(
             CollisionComponent(
-                shapes: [.generateSphere(radius: StickConfig.tipRadius)],
+                shapes: [.generateSphere(radius: Config.stickTipRadius)],
                 // Only collides with entities in the "drum" collision group
                 filter: .init(
                     group: chirality == .left ? .stickTipLeft : .stickTipRight,
@@ -512,8 +509,7 @@ extension ImmersiveViewModel {
         let strikeDirection = normalize(tipPosition - lastPosition)
         let strikeDistance = distance(tipPosition, lastPosition)
 
-        let minSpeed: Float = 0.3
-        if strikeSpeed < minSpeed {
+        if strikeSpeed < Config.minStrikeSpeed {
             return
         }
 
@@ -549,8 +545,8 @@ extension ImmersiveViewModel {
                 )
             )
 
-            // Checks if the strike was directed at the top (drum) surface (≈ within 45° of up)
-            let isTopHit = dot(hit.normal, entityUp) > 0.7
+            // Checks if the strike was directed at the top drum surface (0.7 ≈ within 45° of up)
+            let isTopHit = dot(hit.normal, entityUp) > Config.topHitThreshold
             if isTopHit && !s.isInsideDrum,
                 let drumId = DrumID(rawValue: hit.entity.name)
             {

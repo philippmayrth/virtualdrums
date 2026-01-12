@@ -14,7 +14,7 @@ import Foundation
 final class AudioEngine: ObservableObject {
 
     static let shared = AudioEngine()
-    private init(maxPolyphony: Int = 8) {
+    private init(maxPolyphony: Int = Config.defaultMaxPolyphony) {
         self.maxPolyphony = maxPolyphony
     }    
     
@@ -35,7 +35,7 @@ final class AudioEngine: ObservableObject {
     
     // MARK: - Playback
 
-    func playSound(drum: DrumID, volume: Float = 1.0) {
+    func playSound(drum: DrumID, volume: Float) {
         guard !localAudioMuted else { return }        
         guard let pool = players[drum], !pool.isEmpty else {
             print("⚠️ No sound loaded for:", drum)

@@ -16,9 +16,10 @@ struct virtualdrumsApp: App {
         WindowGroup {
             ContentTabView()
                 .environmentObject(appState)
-                .frame(minWidth: 600, maxWidth: 600, minHeight: 450, maxHeight: 450)
+                .frame(minWidth: Config.tabViewWidth, maxWidth: Config.tabViewWidth,
+                       minHeight: Config.tabViewHeight, maxHeight: Config.tabViewHeight)
                 .onAppear { FootPedalManager.shared.startListening() }
-                // Routes gamepad input directly to GCController handlers instead of to focused UI/InputTargets.
+                /// Routes gamepad input directly to GCController handlers instead of to focused UI/InputTargets.
                 .handlesGameControllerEvents(matching: .gamepad)
         }
         .windowResizability(.contentSize)
@@ -28,7 +29,7 @@ struct virtualdrumsApp: App {
                 .environmentObject(appState)
                 .onAppear { appState.isImmersiveSpaceOpen = true }
                 .onDisappear { appState.isImmersiveSpaceOpen = false }
-                // Routes gamepad input directly to GCController handlers instead of to focused UI/InputTargets.
+                /// Routes gamepad input directly to GCController handlers instead of to focused UI/InputTargets.
                 .handlesGameControllerEvents(matching: .gamepad)
         }
         .environmentObject(appState)

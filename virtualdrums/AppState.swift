@@ -12,10 +12,10 @@ import Combine
 /// Shared app state for passing data between scenes
 @MainActor
 class AppState: ObservableObject {
-    @Published var selectedDrumKit: DrumKitID = .accoustic
-    @Published var selectedDrumSet: DrumSetID = .burgundy_drum
+    @Published var selectedDrumKit: DrumKitID = Config.defaultSelectedDrumKit
+    @Published var selectedDrumSet: DrumSetID = Config.defaultSelectedDrumSet
     @Published var isImmersiveSpaceOpen: Bool = false
-    @Published var isHiHatClosed: Bool = false    
+    @Published var isHiHatClosed: Bool = false
 
     #if targetEnvironment(simulator)
     @Published var simulator = SimulatorState()
@@ -58,15 +58,15 @@ class AppState: ObservableObject {
     }
 
     #if targetEnvironment(simulator)
-    /// Ensures simulator sub-state updates propagate to SwiftUI.
-    private func bindSimulator() {
-        simulator.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-    }
+        /// Ensures simulator sub-state updates propagate to SwiftUI.
+        private func bindSimulator() {
+            simulator.objectWillChange
+                .sink { [weak self] _ in
+                    self?.objectWillChange.send()
+                }
+                .store(in: &cancellables)
+        }
     #else
-    private func bindSimulator() {}
+        private func bindSimulator() {}
     #endif // targetEnvironment(simulator)
 }

@@ -5,9 +5,7 @@ import RealityKitContent
 struct FootPedalView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @EnvironmentObject var appState: AppState
-    @StateObject private var pedal = FootPedalManager.shared
-
-    private let contentWidth: CGFloat = 600
+    @StateObject private var pedal = FootPedalManager.shared    
 
     var body: some View {
         ScrollView {
@@ -20,7 +18,6 @@ struct FootPedalView: View {
                 supportedControllersSection
 
             }
-            .frame(maxWidth: contentWidth, alignment: .leading)
             .padding(30)
         }
     }

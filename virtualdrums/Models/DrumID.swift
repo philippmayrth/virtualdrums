@@ -1,9 +1,3 @@
-//
-//  DrumID.swift
-//  virtualdrums
-//
-//  Created by Oliver Kühle on 11.01.26.
-//
 
 /// Identifies an individual drum or cymbal within a drum kit.
 /// 

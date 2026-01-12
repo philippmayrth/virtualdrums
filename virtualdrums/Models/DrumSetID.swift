@@ -1,9 +1,3 @@
-//
-//  DrumSetID.swift
-//  virtualdrums
-//
-//  Created by Oliver Kühle on 11.01.26.
-//
 
 /// Identifies a 3D drum set layout in the scene.
 ///

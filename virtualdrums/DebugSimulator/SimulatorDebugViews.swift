@@ -49,13 +49,12 @@ import SwiftUI
     struct SimulatorStickControlPanel: View {
         @EnvironmentObject var appState: AppState
 
-        private var step: Float { 0.02 }
-
         var body: some View {
             VStack(spacing: 10) {
                 Text("Simulator Stick")
                     .font(.headline)
                 VStack(spacing: 8) {
+                    let step = Config.simulatorMoveStep
                     HStack(spacing: 8) {
                         moveButton("←") { queueMove(dx: -step, dy: 0, dz: 0) }
                         moveButton("→") { queueMove(dx: step, dy: 0, dz: 0) }
