@@ -26,10 +26,10 @@ curl -X POST "$BASE_URL/event" \
 echo ""
 sleep 0.3
 
-echo "Bass drum (velocity 1.0):"
+echo "Kick (velocity 1.0):"
 curl -X POST "$BASE_URL/event" \
   -H "Content-Type: application/json" \
-  -d '{"drum": "target_bass_drum", "velocity": 1.0}'
+  -d '{"drum": "target_kick", "velocity": 1.0}'
 echo ""
 sleep 0.3
 
@@ -55,7 +55,7 @@ for i in {1..4}; do
   # Kick
   curl -s -X POST "$BASE_URL/event" \
     -H "Content-Type: application/json" \
-    -d '{"drum": "target_bass_drum", "velocity": 0.9}' > /dev/null
+    -d '{"drum": "target_kick", "velocity": 0.9}' > /dev/null
   sleep 0.25
   
   # Snare

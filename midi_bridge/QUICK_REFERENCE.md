@@ -38,7 +38,7 @@ curl -X POST http://localhost:5729/select \
 
 | Drum | MIDI Note | CC Name |
 |------|-----------|---------|
-| Bass Drum | 36 | C1 |
+| Kick | 36 | C1 |
 | Snare | 38 | D1 |
 | Floor Tom | 41 | F1 |
 | Mid Tom | 47 | B1 |
@@ -157,7 +157,7 @@ pipenv install <package>
 for i in {1..4}; do
   curl -s -X POST http://localhost:5729/event \
     -H "Content-Type: application/json" \
-    -d '{"drum":"target_bass_drum","velocity":0.9}' && sleep 0.25
+    -d '{"drum":"target_kick","velocity":0.9}' && sleep 0.25
   curl -s -X POST http://localhost:5729/event \
     -H "Content-Type: application/json" \
     -d '{"drum":"target_snare","velocity":0.8}' && sleep 0.25

@@ -66,7 +66,7 @@ Content-Type: application/json
 }
 ```
 
-- `drum`: Drum ID (e.g., "target_snare", "target_bass_drum")
+- `drum`: Drum ID (e.g., "target_snare", "target_kick")
 - `velocity`: Hit velocity (0.0 to 1.0)
 - `noteOffDelay`: Optional, duration before Note Off (default: 0.1s)
 
@@ -92,7 +92,7 @@ Content-Type: application/json
 
 | Drum | MIDI Note | GM Standard |
 |------|-----------|-------------|
-| Bass Drum | 36 | Kick |
+| Kick | 36 | Kick |
 | Snare | 38 | Snare |
 | Floor Tom | 41 | Floor Tom |
 | Mid Tom | 47 | Mid Tom |

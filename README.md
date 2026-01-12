@@ -106,7 +106,7 @@ We currently have two drum sets with multiple modular drum pieces:
 * `burgundy_drum.usdz`
   * [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution) (adjust for our needs in Blender)
   1. target_snare
-  2. target_bass_drum
+  2. target_kick
   3. target_floor_tom
   4. target_mid_tom
   5. target_high_tom
@@ -116,7 +116,7 @@ We currently have two drum sets with multiple modular drum pieces:
 * `drum_kit.usdz`
   * [Drum Kit](https://skfb.ly/oZroJ) (CC Attribution) (adjust for our needs in Blender)
   1. target_snare
-  2. target_bass_drum
+  2. target_kick
   3. target_floor_tom
   4. target_mid_tom
   5. target_high_tom
@@ -168,7 +168,7 @@ The drum kits are defined in `ContentView.swift` under `DrumKitID`.
 ### 1. Einschränkungen der Fußinteraktion
 
 * **Keine native Fußerkennung in RealityKit**
-  RealityKit stellt derzeit keine Fußerkennung bereit. Dadurch ist eine Umsetzung von Fußpedalen (z. B. Bassdrum oder Hi-Hat) über Bilderkennung nicht möglich.
+  RealityKit stellt derzeit keine Fußerkennung bereit. Dadurch ist eine Umsetzung von Fußpedalen (z. B. Kick oder Hi-Hat) über Bilderkennung nicht möglich.
 
 * **Kein Zugriff auf Kamerabilddaten**
   Der fehlende Zugriff auf das Rohbildmaterial der Kameras verhindert eine eigenständige Implementierung einer Fußerkennung.

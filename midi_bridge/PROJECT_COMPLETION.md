@@ -158,7 +158,7 @@ VR App (VisionOS) → HTTP/JSON → Python Bridge → MIDI → Logic Pro
 
 | Drum ID | MIDI Note | Name |
 |---------|-----------|------|
-| target_bass_drum | 36 | Kick |
+| target_kick | 36 | Kick |
 | target_snare | 38 | Snare |
 | target_floor_tom | 41 | Floor Tom |
 | target_mid_tom | 47 | Mid Tom |

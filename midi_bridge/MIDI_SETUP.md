@@ -107,7 +107,7 @@ All drum events are sent on **MIDI Channel 10** (standard GM drums):
 
 | Drum          | MIDI Note | GM Standard    |
 |---------------|-----------|----------------|
-| Bass Drum     | 36        | Kick           |
+| Kick          | 36        | Kick           |
 | Snare         | 38        | Snare          |
 | Floor Tom     | 41        | Floor Tom      |
 | Mid Tom       | 47        | Mid Tom        |

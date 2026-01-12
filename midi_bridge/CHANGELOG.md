@@ -44,7 +44,7 @@
 
 #### Drum Mapping (Channel 10)
 ```
-Bass Drum        → 36
+Kick             → 36
 Snare            → 38
 Floor Tom        → 41
 Mid Tom          → 47

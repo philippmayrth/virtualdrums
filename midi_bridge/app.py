@@ -22,7 +22,7 @@ app = Quart(__name__)
 # MIDI note mapping for drums
 DRUM_MIDI_MAP = {
     "target_snare": 38,           # Snare
-    "target_bass_drum": 36,       # Kick
+    "target_kick": 36,            # Kick
     "target_floor_tom": 41,       # Floor tom
     "target_mid_tom": 47,         # Mid tom
     "target_high_tom": 50,        # High tom

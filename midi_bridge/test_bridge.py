@@ -31,7 +31,7 @@ def test_drum_hit():
     print("\n🥁 Testing drum hit events...")
     drums = [
         ("target_snare", 0.8),
-        ("target_bass_drum", 1.0),
+        ("target_kick", 1.0),
         ("target_hi_hat_closed", 0.6),
         ("target_crash", 0.9),
     ]

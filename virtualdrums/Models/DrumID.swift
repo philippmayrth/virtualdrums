@@ -5,7 +5,7 @@
 /// Some IDs represent physical drums in the scene, while others represent specific sound variants (e.g. hi-hat open/closed).
 enum DrumID: String, CaseIterable {
     case target_snare
-    case target_bass_drum /// "kick"
+    case target_kick
     case target_floor_tom
     case target_mid_tom
     case target_high_tom

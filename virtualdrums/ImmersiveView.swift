@@ -26,7 +26,7 @@ struct ImmersiveView: View {
             viewModel.onChangeHiHatTopPosition(to: newDistance)
         })
         .onChange(of: footPedalManager.kick.distance, {oldDistance, newDistance in
-            viewModel.onChangeBassDrumBeaterPosition(from: oldDistance, to: newDistance)
+            viewModel.onChangeKickBeaterPosition(from: oldDistance, to: newDistance)
         })
         .onChange(of: footPedalManager.isControllerConnected, {_, isConnected in
             viewModel.onChangeControllerConnected(isConnected)

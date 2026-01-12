@@ -230,7 +230,7 @@ Edit `midi_bridge/app.py`:
 ```python
 DRUM_MIDI_MAP = {
     "target_snare": 40,  # Use rim shot
-    "target_bass_drum": 36,  # Standard kick
+    "target_kick": 36,   # Standard kick
     # ... etc
 }
 ```

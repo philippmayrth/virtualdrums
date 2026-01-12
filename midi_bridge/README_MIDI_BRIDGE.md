@@ -94,7 +94,7 @@ All drums mapped to Channel 10 (GM standard):
 
 | Drum | MIDI Note | Standard Name |
 |------|-----------|---------------|
-| Bass Drum | 36 | Kick |
+| Kick | 36 | Kick |
 | Snare | 38 | Snare |
 | Floor Tom | 41 | Floor Tom |
 | Mid Tom | 47 | Mid Tom |

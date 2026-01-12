@@ -36,9 +36,9 @@ final class ImmersiveViewModel: ObservableObject {
     private var hiHatTopParentRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
 
     // Kick
-    private var bassDrumEntity: ModelEntity?  // store to save lookup
-    private var bassBeater: ModelEntity?
-    private var bassBeaterRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
+    private var kickDrumEntity: ModelEntity?  // store to skip lookup
+    private var kickBeater: ModelEntity?
+    private var kickBeaterRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
 
     // Drum rest rotations
     private var drumRestOrientations: [Entity.ID: simd_quatf] = [:]  // refactor to ModelEntity extension
@@ -89,7 +89,7 @@ final class ImmersiveViewModel: ObservableObject {
     }
 
     func onChangeControllerConnected(_ isConnected: Bool) {
-        bassBeater?.isEnabled = isConnected
+        kickBeater?.isEnabled = isConnected
     }
 
     func onChangeDrumSet(to drumSet: DrumSetID) {
@@ -118,14 +118,14 @@ final class ImmersiveViewModel: ObservableObject {
         }
     }
 
-    func onChangeBassDrumBeaterPosition(from previousDistance: Float, to distance: Float) {
-        moveBassBeaterEntity(distance: distance)
+    func onChangeKickBeaterPosition(from previousDistance: Float, to distance: Float) {
+        moveKickBeaterEntity(distance: distance)
 
         if distance == 0.0 && previousDistance != 0.0 {
-            let hitWorldPosition = bassBeater!.position(relativeTo: nil)
+            let hitWorldPosition = kickBeater!.position(relativeTo: nil)
             onDrumHit(
-                drumID: .target_bass_drum,
-                drumEntity: bassDrumEntity!,
+                drumID: .target_kick,
+                drumEntity: kickDrumEntity!,
                 hitWorldPosition: hitWorldPosition
             )
         }
@@ -166,10 +166,10 @@ extension ImmersiveViewModel {
     
     /// Moves the kick beater towards/away from the drum face.
     /// The beater is not animated – therefore we can set the position directly.
-    private func moveBassBeaterEntity(distance: Float) {
+    private func moveKickBeaterEntity(distance: Float) {
         // offset direction is towards the user, away from the drum face (-Z axis)
         let offset = SIMD3<Float>(0, -(distance * Config.maxBeaterOffset), 0)
-        bassBeater?.position = bassBeaterRestPosition + offset
+        kickBeater?.position = kickBeaterRestPosition + offset
     }
 
     /// Opens and closes the hi-hat by translating its parent instead of the cymbal itself.
@@ -304,8 +304,8 @@ extension ImmersiveViewModel {
 
                 switch model.name {
                 case DrumID.target_hi_hat_top.rawValue: setupHiHatTop(entity: model)
-                case DrumID.target_bass_drum.rawValue: setupBassDrum(entity: model)
-                case "bass_drum_pedal": setupBassBeater(entity: model)
+                case DrumID.target_kick.rawValue: setupKickDrum(entity: model)
+                case "kick_beater": setupKickBeater(entity: model)
                 default: break
                 }
             }
@@ -339,16 +339,16 @@ extension ImmersiveViewModel {
         drumController.onDrumLoaded(drumID)
     }
 
-    private func setupBassDrum(entity: ModelEntity) {
-        bassDrumEntity = entity
+    private func setupKickDrum(entity: ModelEntity) {
+        kickDrumEntity = entity
     }
 
-    private func setupBassBeater(entity: ModelEntity) {
-        bassBeater = entity
-        bassBeaterRestPosition = entity.position
+    private func setupKickBeater(entity: ModelEntity) {
+        kickBeater = entity
+        kickBeaterRestPosition = entity.position
 
-        bassBeater?.isEnabled = footPedalManager.isControllerConnected
-        moveBassBeaterEntity(distance: footPedalManager.kick.distance)
+        kickBeater?.isEnabled = footPedalManager.isControllerConnected
+        moveKickBeaterEntity(distance: footPedalManager.kick.distance)
     }
     
     private func setupHiHatTop(entity: ModelEntity) {
