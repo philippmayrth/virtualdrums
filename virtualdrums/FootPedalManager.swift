@@ -28,9 +28,6 @@ final class FootPedalManager: ObservableObject {
 
     struct PedalState {
         var distance: Float = 1.0
-        var velocity: Float = 0.0
-        var lastDistance: Float = 1.0
-        var lastTime: TimeInterval = 0
     }
 
     @Published private(set) var hiHat = PedalState()
@@ -135,18 +132,12 @@ final class FootPedalManager: ObservableObject {
     
     // MARK: - Pedal math
     
+    // The controller gives us "pressure" (1 = pressed).
+    // We flip it into "remaining travel distance" (0 = pressed, 1 = released)
     @MainActor
     private func update(_ pedal: inout PedalState, value: Float) {
-        let now = CACurrentMediaTime()
+        // TODO: add velocity?
         let distance = 1 - value
-
-        let deltaDistance = pedal.lastDistance - distance
-        let deltaTime = max(now - pedal.lastTime, 0.001)
-                                                
-        pedal.velocity = deltaDistance / Float(deltaTime)
         pedal.distance = distance
-        
-        pedal.lastDistance = distance
-        pedal.lastTime = now
     }
 }

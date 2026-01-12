@@ -23,10 +23,10 @@ struct ImmersiveView: View {
             viewModel.onChangeDrumSet(to: drumSet)
         })
         .onChange(of: footPedalManager.hiHat.distance, {_, newDistance in
-            viewModel.onChangeHiHatTopPosition(to: newDistance, velocity: viewModel.footPedalManager.hiHat.velocity)
+            viewModel.onChangeHiHatTopPosition(to: newDistance)
         })
         .onChange(of: footPedalManager.kick.distance, {oldDistance, newDistance in
-            viewModel.onChangeBassDrumBeaterPosition(from: oldDistance, to: newDistance, velocity: viewModel.footPedalManager.kick.velocity)
+            viewModel.onChangeBassDrumBeaterPosition(from: oldDistance, to: newDistance)
         })
         .onChange(of: footPedalManager.isControllerConnected, {_, isConnected in
             viewModel.onChangeControllerConnected(isConnected)

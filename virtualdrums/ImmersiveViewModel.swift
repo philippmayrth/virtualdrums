@@ -106,7 +106,7 @@ final class ImmersiveViewModel: ObservableObject {
         Task { await replaceDrumSet(with: drumSet) }
     }
 
-    func onChangeHiHatTopPosition(to distance: Float, velocity: Float) {
+    func onChangeHiHatTopPosition(to distance: Float) {
         moveHiHatTopEntity(distance: distance)
 
         let wasClosed = appState.isHiHatClosed
@@ -119,7 +119,7 @@ final class ImmersiveViewModel: ObservableObject {
                 drumID: .target_hi_hat_chick,
                 drumEntity: hiHatTopEntity!,
                 hitWorldPosition: hitWorldPosition,
-                velocity: velocity
+                velocity: 4 // TODO: 
             )
         }
 
@@ -129,7 +129,7 @@ final class ImmersiveViewModel: ObservableObject {
         }
     }
 
-    func onChangeBassDrumBeaterPosition(from previousDistance: Float, to distance: Float, velocity: Float) {
+    func onChangeBassDrumBeaterPosition(from previousDistance: Float, to distance: Float) {
         moveBassBeaterEntity(distance: distance)
 
         if distance == 0.0 && previousDistance != 0.0 {
@@ -138,7 +138,7 @@ final class ImmersiveViewModel: ObservableObject {
                 drumID: .target_bass_drum,
                 drumEntity: bassDrumEntity!,
                 hitWorldPosition: hitWorldPosition,
-                velocity: velocity
+                velocity: 4 // TODO: 
             )
         }
     }
@@ -152,7 +152,7 @@ final class ImmersiveViewModel: ObservableObject {
         if drumID == .target_hi_hat_top {
             // Toggle open/closed
             let distance: Float = appState.isHiHatClosed ? 1.0 : 0.0
-            onChangeHiHatTopPosition(to: distance, velocity: 4) //TODO:
+            onChangeHiHatTopPosition(to: distance)
         }
 
         #if targetEnvironment(simulator)
