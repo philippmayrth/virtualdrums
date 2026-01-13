@@ -138,14 +138,8 @@ The prefix ensures we can validate the collision target and the drum piece suffi
 
 #### Important: Axis Orientation
 
-We compare the raycast hit normal (strike direction) with the UP vector of the drum piece. Therefore the drum face (piece that should be hit) must point up!
-
-Blender uses **Z-up**, while RealityKit uses **Y-up**. Because of this difference, models often need axis conversion before they can be used correctly in RealityKit.
-An easy option is to **use Reality Composer Pro**:
-
-1. Open the `.usdz` file in Reality Composer Pro.
-2. In the *Layer Data* card, set the **Up Axis** to **Z**.
-3. Export the corrected `.usdz` file.
+We compare the raycast hit normal (strike direction) with the UP vector of the drum piece.
+Therefore the drum face (piece that should be hit) must point up and the rotation must be preserved and to applied to or baked into the mesh.
 
 ## Drum Sound Kits
 
