@@ -167,8 +167,10 @@ extension ImmersiveViewModel {
     /// Moves the kick beater towards/away from the drum face.
     /// The beater is not animated – therefore we can set the position directly.
     private func moveKickBeaterEntity(distance: Float) {
-        // offset direction is towards the user, away from the drum face (-Z axis)
-        let offset = SIMD3<Float>(0, -(distance * Config.maxBeaterOffset), 0)
+        guard let beater = kickBeater else { return }
+        let beaterWidth = beater.visualBounds(relativeTo: beater.parent).extents.x
+        let maxOffSet = beaterWidth * 2.0
+        let offset = SIMD3<Float>(0, -(distance * maxOffSet), 0) // towards the user, away from the drum face
         kickBeater?.position = kickBeaterRestPosition + offset
     }
 
@@ -182,15 +184,12 @@ extension ImmersiveViewModel {
             let hiHat = hiHatTopEntity,
             let parent = hiHat.parent
         else { return }
+                
+        let bounds = hiHat.visualBounds(relativeTo: nil)
+        let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
+        let maxOffset = radius * 0.25
         
-        // TODO: Models have multiple parents with diffrent scales, which first need to be tidied; then use the radius for dynamic maxOffset
-        
-        let maxOffset: Float = (appState.selectedDrumSet == .burgundy_drum)
-            ? Config.maxHiHatOffsetBurgundy
-            : Config.maxHiHatOffsetFun
-        
-        // offset direction is upwards, away from hi-hat bottom (Y axis)
-        let offset = SIMD3<Float>(0, 0, distance * maxOffset)
+        let offset = SIMD3<Float>(0, 0, distance * maxOffset) // upwards, away from hi-hat bottom
         parent.position = hiHatTopParentRestPosition + offset
     }
     

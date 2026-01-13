@@ -14,10 +14,6 @@ enum Config {
     
     // Immersive Space
     static let drumSetPosition: SIMD3<Float> = [0, 0.15, -0.6]
-    static let maxBeaterOffset: Float = 10.0
-    static let maxHiHatOffsetBurgundy: Float = 8.0
-    static let maxHiHatOffsetFun: Float = 8.0
-
 
     // Audio
     static let defaultMaxPolyphony: Int = 8
