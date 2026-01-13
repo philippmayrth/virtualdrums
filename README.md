@@ -114,7 +114,7 @@ We currently have two drum sets with multiple modular drum pieces:
   7. target_ride
   8. ~~target_crash~~
 * `drum_kit.usdz`
-  * [Drum Kit](https://skfb.ly/oZroJ) (CC Attribution) (adjust for our needs in Blender)
+  * [Drum Kit](https://skfb.ly/6ZpKO) (CC Attribution) (adjust for our needs in Blender)
   1. target_snare
   2. target_kick
   3. target_floor_tom

@@ -48,7 +48,7 @@ struct InfoView: View {
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("Developed by\nOliver Hans Kühle, Philipp Mayr, Julius Immanuel Greppmair\n\nFun Drum by local.yany (CC Attribution) https://skfb.ly/oZroJ\n\nOpal Drum by Glowbox 3D (CC Attribution) https://skfb.ly/oIXLv")
+            Text("Developed by\nOliver Hans Kühle, Philipp Mayr, Julius Immanuel Greppmair\n\nNatal Drum by local.yany (CC Attribution) https://skfb.ly/6ZpKO\n\nOpal Drum by Glowbox 3D (CC Attribution) https://skfb.ly/oIXLv")
                 .foregroundColor(.secondary)
                 .font(.body)
 
