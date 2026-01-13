@@ -4,7 +4,7 @@ enum Config {
 
     // App State
     static let defaultSelectedDrumKit: DrumKitID = .accoustic
-    static let defaultSelectedDrumSet: DrumSetID = .burgundy_drum
+    static let defaultSelectedDrumSet: DrumSetID = .natal
 
 
     // WindowGroup UI

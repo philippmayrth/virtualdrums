@@ -17,14 +17,14 @@ private struct DrumSet: Identifiable {
         label: "Natal Drum",
         description: "5 drums, 3 cymbals"
     )
-    static let burgundy_drum = DrumSet(
-        id: .burgundy_drum,
+    static let opal = DrumSet(
+        id: .opal,
         label: "Opal Drum",
-        description: "5 drums , 2 cymbals"
+        description: "5 drums , 3 cymbals"
     )
     
     /// Collection for looping
-    static let all: [DrumSet] = [.natal, .burgundy_drum]
+    static let all: [DrumSet] = [.natal, .opal]
 }
 
 struct DrumSetView: View {

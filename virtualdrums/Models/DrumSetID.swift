@@ -5,7 +5,7 @@
 /// Changing the DrumSet changes how the kit looks in the world, but not which sounds are played.
 enum DrumSetID: String, CaseIterable, Identifiable {
     case natal
-    case burgundy_drum
+    case opal
 
     var id: String { rawValue }
 }
