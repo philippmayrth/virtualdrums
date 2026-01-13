@@ -12,9 +12,9 @@ private struct DrumSet: Identifiable {
     let label: String
     let description: String
 
-    static let drum_kit = DrumSet(
-        id: .drum_kit,
-        label: "Fun Drum",
+    static let natal = DrumSet(
+        id: .natal,
+        label: "Natal Drum",
         description: "5 drums, 3 cymbals"
     )
     static let burgundy_drum = DrumSet(
@@ -24,7 +24,7 @@ private struct DrumSet: Identifiable {
     )
     
     /// Collection for looping
-    static let all: [DrumSet] = [.drum_kit, .burgundy_drum]
+    static let all: [DrumSet] = [.natal, .burgundy_drum]
 }
 
 struct DrumSetView: View {
