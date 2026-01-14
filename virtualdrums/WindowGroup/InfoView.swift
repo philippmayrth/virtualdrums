@@ -19,7 +19,7 @@ struct InfoView: View {
                     Text("Bright sunlight is recommended.")
                         .foregroundColor(.white)
                         .fontWeight(.bold)
-                    Text("Poor or uneven lighting can impact hand tracking and drum stick movement.")
+                    Text(" Poor or uneven lighting can impact hand tracking and drum stick movement.")
                         .foregroundColor(.secondary)
                 }
                 
@@ -27,7 +27,7 @@ struct InfoView: View {
                     Text("System audio output is recommended.")
                         .foregroundColor(.white)
                         .fontWeight(.bold)
-                    Text("Bluetooth audio devices may introduce noticeable audio delay.")
+                    Text(" Bluetooth audio devices may introduce noticeable audio delay.")
                         .foregroundColor(.secondary)
                 }
                 
@@ -35,7 +35,7 @@ struct InfoView: View {
                     Text("Widgets can break collision detection.")
                         .foregroundColor(.white)
                         .fontWeight(.bold)
-                    Text("visionOS widgets placed on your walls may interfere with hand tracking, even though they aren’t visible in immersive spaces. Please remove them while using the app.")
+                    Text(" visionOS widgets placed on your walls may interfere with hand tracking, even though they aren’t visible in immersive spaces. Please remove them while using the app.")
                         .foregroundColor(.secondary)
                 }
                 
@@ -44,16 +44,21 @@ struct InfoView: View {
 
             // MARK: - Credits
 
-            Text("Credits")
-                .font(.title)
-                .fontWeight(.bold)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Credits")
+                    .font(.title)
+                    .fontWeight(.bold)
 
-            Text("Developed by\nOliver Hans Kühle, Philipp Mayr, Julius Immanuel Greppmair\n\nNatal Drum by local.yany (CC Attribution) https://skfb.ly/6ZpKO\n\nOpal Drum by Glowbox 3D (CC Attribution) https://skfb.ly/oIXLv")
-                .foregroundColor(.secondary)
-                .font(.body)
-
-            Spacer()
+                Text("Developed by\nOliver Hans Kühle, Philipp Mayr, Julius Immanuel Greppmair")
+                    .foregroundColor(.secondary)
+                    .font(.body)
+                
+                Text("Natal Drum by local.yany (CC Attribution) https://skfb.ly/6ZpKO\nOpal Drum by Glowbox 3D (CC Attribution) https://skfb.ly/oIXLv")
+                    .foregroundColor(.secondary)
+                    .font(.body)
+            }
         }
+        .fixedSize(horizontal: false, vertical: true) // Allows text to wrap lines
         .padding(40)
     }
 }
