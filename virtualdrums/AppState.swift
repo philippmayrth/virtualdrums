@@ -16,6 +16,7 @@ class AppState: ObservableObject {
     @Published var selectedDrumSet: DrumSetID = Config.defaultSelectedDrumSet
     @Published var isImmersiveSpaceOpen: Bool = false
     @Published var isHiHatClosed: Bool = false
+    @Published var handedness: Handedness = .right
 
     #if targetEnvironment(simulator)
     @Published var simulator = SimulatorState()

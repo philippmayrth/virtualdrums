@@ -95,6 +95,10 @@ final class ImmersiveViewModel: ObservableObject {
     func onChangeDrumSet(to drumSet: DrumSetID) {
         Task { await replaceDrumSet(with: drumSet) }
     }
+    
+    func onHandednessChanged(to handedness: Handedness) {
+        Task { await replaceDrumSet(with: appState.selectedDrumSet) }
+    }
 
     func onChangeHiHatTopPosition(to distance: Float) {
         moveHiHatTopEntity(distance: distance)
@@ -297,6 +301,10 @@ extension ImmersiveViewModel {
         for child in entity.children {
             if let model = child as? ModelEntity {  // must be a ModelEntity (→ has a mesh)
 
+                if appState.handedness == .left {
+                    entity.applyLeftHandednessMirror()
+                }
+                
                 if let drumID = DrumID(rawValue: model.name) {  // must be a recognized drum (→ named "target_[drum_piece]")
                     await setupDrumTarget(entity: model, drumID: drumID)
                 }

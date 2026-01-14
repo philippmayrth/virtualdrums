@@ -22,6 +22,9 @@ struct ImmersiveView: View {
         .onChange(of: appState.selectedDrumSet, { _, drumSet in
             viewModel.onChangeDrumSet(to: drumSet)
         })
+        .onChange(of: appState.handedness, {_, handedness in
+            viewModel.onHandednessChanged(to: handedness)
+        })
         .onChange(of: footPedalManager.hiHat.distance, {_, newDistance in
             viewModel.onChangeHiHatTopPosition(to: newDistance)
         })

@@ -48,9 +48,20 @@ struct DrumSetView: View {
                     .foregroundColor(.secondary)
                     .fontWeight(.medium)
             }
+            
+            VStack(spacing: 8) {
+                // Handedness selection
+                Picker("Handedness", selection: $appState.handedness) {
+                    ForEach(Handedness.allCases, id: \.self) { handedness in
+                        Text(handedness.rawValue).tag(handedness)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .font(.callout)
+                .frame(maxWidth: 300)
+                .opacity(0.8)
 
-            // Drum set selection buttons
-            VStack() {
+                // Drum set selection buttons
                 ForEach(DrumSet.all) { set in
                     if isSelected(set.id) {
                         DrumSetButton(
