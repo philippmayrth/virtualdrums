@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "App Background@2x.jpg",
+      "filename" : "back.png",
       "idiom" : "vision",
       "scale" : "2x"
     }
