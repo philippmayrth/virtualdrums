@@ -139,9 +139,7 @@ final class ImmersiveViewModel: ObservableObject {
         let entity = value.entity
         let location3D = value.location3D
 
-        guard let drumID = DrumID(rawValue: entity.name) else { return }
-
-        if drumID == .target_hi_hat_top {
+        if (entity.name == DrumID.target_hi_hat_top.rawValue || entity.name == "hi_hat_bottom") {
             // Toggle open/closed
             let distance: Float = appState.isHiHatClosed ? 1.0 : 0.0
             onChangeHiHatTopPosition(to: distance)
@@ -152,9 +150,9 @@ final class ImmersiveViewModel: ObservableObject {
             // TODO: calculate correct world position
             let worldPosition = resolveTapWorldPosition(entity: entity, location: localPosition)
             startSimulatorSweep(at: worldPosition)
-            
+
             onDrumHit(
-                drumID: drumID,
+                drumID: DrumID(rawValue: entity.name)!,
                 drumEntity: value.entity,
                 hitWorldPosition: worldPosition,
             )
@@ -313,6 +311,25 @@ extension ImmersiveViewModel {
                 case DrumID.target_hi_hat_top.rawValue: setupHiHatTop(entity: model)
                 case DrumID.target_kick.rawValue: setupKickDrum(entity: model)
                 case "kick_beater": setupKickBeater(entity: model)
+                case "hi_hat_bottom":                    
+                    
+                    do {
+                        let shape = try await ShapeResource.generateConvex(from: model.model!.mesh)
+                        model.components.set(
+                            CollisionComponent(
+                                shapes: [shape],
+                                filter: .init(
+                                    group: .drum,
+                                    mask: []
+                                )
+                            )
+                        )
+                    } catch {
+                        print("⚠️ Could not generate collider for:", model.name, error)
+                    }
+                    
+                    model.components.set(InputTargetComponent())
+                    
                 default: break
                 }
             }
