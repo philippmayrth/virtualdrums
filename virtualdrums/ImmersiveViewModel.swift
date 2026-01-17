@@ -137,27 +137,28 @@ final class ImmersiveViewModel: ObservableObject {
     
     func onTapGesture(value: EntityTargetValue<SpatialTapGesture.Value>) {
         let entity = value.entity
-        let location3D = value.location3D
 
-        guard let drumID = DrumID(rawValue: entity.name) else { return }
-
-        if drumID == .target_hi_hat_top {
+        let isHiHat = (entity.name == DrumID.target_hi_hat_top.rawValue || entity.name == "hi_hat_bottom")
+        if isHiHat {
             // Toggle open/closed
             let distance: Float = appState.isHiHatClosed ? 1.0 : 0.0
             onChangeHiHatTopPosition(to: distance)
         }
 
         #if targetEnvironment(simulator)
+            let location3D = value.location3D
             let localPosition = SIMD3<Float>(Float(location3D.x), Float(location3D.y), Float(location3D.z))
             // TODO: calculate correct world position
             let worldPosition = resolveTapWorldPosition(entity: entity, location: localPosition)
             startSimulatorSweep(at: worldPosition)
             
-            onDrumHit(
-                drumID: drumID,
-                drumEntity: value.entity,
-                hitWorldPosition: worldPosition,
-            )
+            if let target = DrumID(rawValue: entity.name) {
+                onDrumHit(
+                    drumID: target,
+                    drumEntity: value.entity,
+                    hitWorldPosition: worldPosition,
+                )
+            }
         #endif  // targetEnvironment(simulator)
     }
 
@@ -313,6 +314,7 @@ extension ImmersiveViewModel {
                 case DrumID.target_hi_hat_top.rawValue: setupHiHatTop(entity: model)
                 case DrumID.target_kick.rawValue: setupKickDrum(entity: model)
                 case "kick_beater": setupKickBeater(entity: model)
+                case "hi_hat_bottom": await setupHiHatBottom(entity: model)
                 default: break
                 }
             }
@@ -365,6 +367,25 @@ extension ImmersiveViewModel {
         entity.components.set(InputTargetComponent())
 
         moveHiHatTopEntity(distance: appState.isHiHatClosed ? 0.0 : 1.0)
+    }
+
+    private func setupHiHatBottom(entity: ModelEntity) async {
+        do {
+            let shape = try await ShapeResource.generateConvex(from: entity.model!.mesh)
+            entity.components.set(
+                CollisionComponent(
+                    shapes: [shape],
+                    filter: .init(
+                        group: .drum,
+                        mask: []
+                    )
+                )
+            )
+        } catch {
+            print("⚠️ Could not generate collider for:", entity.name, error)
+        }                                        
+        
+        entity.components.set(InputTargetComponent())
     }
 }
 
