@@ -17,6 +17,15 @@ class AppState: ObservableObject {
     @Published var isImmersiveSpaceOpen: Bool = false
     @Published var isHiHatClosed: Bool = false
     @Published var handedness: Handedness = .right
+    
+    @Published var stickHandleLength: Float = Config.stickHandleLength
+    @Published var drumScale: Float = 1
+    @Published var drumDistance: Float = 0
+    @Published var drumHeight: Float = 0
+    @Published var stickTipRadius: Float = Config.stickTipRadius
+    @Published var stickHandleRadius: Float = Config.stickHandleRadius
+    
+    @Published var isProjekttag: Bool = true
 
     #if targetEnvironment(simulator)
     @Published var simulator = SimulatorState()

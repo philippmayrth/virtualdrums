@@ -201,3 +201,7 @@ The drum kits are defined in `ContentView.swift` under `DrumKitID`.
 
 * **Keine kabelgebundene Alternative**
   visionOS bietet derzeit keine Möglichkeit, kabelgebundene Audiogeräte anzuschließen. Somit existiert keine Low-Latency-Alternative zur Bluetooth-Audioausgabe, wodurch die Latenz nicht zuverlässig reduziert oder umgangen werden kann.
+
+
+
+https://www.musicradar.com/news/drums/1000-free-drum-samples

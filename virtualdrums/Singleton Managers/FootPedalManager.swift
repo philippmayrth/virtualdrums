@@ -73,50 +73,98 @@ final class FootPedalManager: ObservableObject {
         
         // LEFT SIDE BUTTONS → HI-HAT
 
-        gamepad.leftTrigger.valueChangedHandler = { _, value, _ in
-            self.update(&self.hiHat, value: value)
-        }
+        if (controller.vendorName == "DUALSHOCK 4 Wireless Controller") {
+            gamepad.leftTrigger.valueChangedHandler = { _, value, _ in
+                self.update(&self.kick, value: value)
+            }
 
-        gamepad.leftShoulder.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.hiHat, value: pressed ? 1 : 0)
-        }
+            gamepad.leftShoulder.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.kick, value: pressed ? 1 : 0)
+            }
 
-        gamepad.dpad.valueChangedHandler = { _, x, y in
-            self.update(&self.hiHat, value: max(abs(x), abs(y)))
-        }
+            gamepad.dpad.valueChangedHandler = { _, x, y in
+                self.update(&self.kick, value: max(abs(x), abs(y)))
+            }
 
-        gamepad.leftThumbstick.valueChangedHandler = { _, x, y in
-            self.update(&self.hiHat, value: max(abs(x), abs(y)))
-        }
+            gamepad.leftThumbstick.valueChangedHandler = { _, x, y in
+                self.update(&self.kick, value: max(abs(x), abs(y)))
+            }
 
-        // RIGHT SIDE BUTTONS → KICK
+            // RIGHT SIDE BUTTONS → KICK
 
-        gamepad.rightTrigger.valueChangedHandler = { _, value, _ in
-            self.update(&self.kick, value: value)
-        }
+            gamepad.rightTrigger.valueChangedHandler = { _, value, _ in
+                self.update(&self.hiHat, value: value)
+            }
 
-        gamepad.rightShoulder.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.kick, value: pressed ? 1 : 0)
-        }
+            gamepad.rightShoulder.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.hiHat, value: pressed ? 1 : 0)
+            }
 
-        gamepad.buttonA.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.kick, value: pressed ? 1 : 0)
-        }
+            gamepad.buttonA.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.hiHat, value: pressed ? 1 : 0)
+            }
 
-        gamepad.buttonB.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.kick, value: pressed ? 1 : 0)
-        }
+            gamepad.buttonB.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.hiHat, value: pressed ? 1 : 0)
+            }
 
-        gamepad.buttonX.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.kick, value: pressed ? 1 : 0)
-        }
+            gamepad.buttonX.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.hiHat, value: pressed ? 1 : 0)
+            }
 
-        gamepad.buttonY.pressedChangedHandler = { _, _, pressed in
-            self.update(&self.kick, value: pressed ? 1 : 0)
-        }
+            gamepad.buttonY.pressedChangedHandler = { _, _, pressed in
+                self.update(&self.hiHat, value: pressed ? 1 : 0)
+            }
 
-        gamepad.rightThumbstick.valueChangedHandler = { _, x, y in
-            self.update(&self.kick, value: max(abs(x), abs(y)))
+            gamepad.rightThumbstick.valueChangedHandler = { _, x, y in
+                self.update(&self.hiHat, value: max(abs(x), abs(y)))
+            }
+        } else {
+            gamepad.leftTrigger.valueChangedHandler = { _, value, _ in
+                        self.update(&self.hiHat, value: value)
+                    }
+
+                    gamepad.leftShoulder.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.hiHat, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.dpad.valueChangedHandler = { _, x, y in
+                        self.update(&self.hiHat, value: max(abs(x), abs(y)))
+                    }
+
+                    gamepad.leftThumbstick.valueChangedHandler = { _, x, y in
+                        self.update(&self.hiHat, value: max(abs(x), abs(y)))
+                    }
+
+                    // RIGHT SIDE BUTTONS → KICK
+
+                    gamepad.rightTrigger.valueChangedHandler = { _, value, _ in
+                        self.update(&self.kick, value: value)
+                    }
+
+                    gamepad.rightShoulder.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.kick, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.buttonA.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.kick, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.buttonB.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.kick, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.buttonX.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.kick, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.buttonY.pressedChangedHandler = { _, _, pressed in
+                        self.update(&self.kick, value: pressed ? 1 : 0)
+                    }
+
+                    gamepad.rightThumbstick.valueChangedHandler = { _, x, y in
+                        self.update(&self.kick, value: max(abs(x), abs(y)))
+                    }
         }
 
         // Intentionally ignoring: buttonMenu, buttonOptions, buttonHome

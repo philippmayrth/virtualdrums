@@ -8,10 +8,18 @@
 import SwiftUI
 
 struct InfoView: View {
+    @EnvironmentObject var appState: AppState
+    
     var body: some View {
+        
+        
         VStack(alignment: .leading, spacing: 20) {
 
             // MARK: - Info
+            
+            Button("Open Projekttag view", action: {
+                appState.isProjekttag = true;
+            })
 
             VStack(alignment: .leading, spacing: 12) {
                 
@@ -20,14 +28,6 @@ struct InfoView: View {
                         .foregroundColor(.white)
                         .fontWeight(.bold)
                     Text(" Poor or uneven lighting can impact hand tracking and drum stick movement.")
-                        .foregroundColor(.secondary)
-                }
-                
-                VStack(alignment: .leading) {
-                    Text("System audio output is recommended.")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                    Text(" Bluetooth audio devices may introduce noticeable audio delay.")
                         .foregroundColor(.secondary)
                 }
                 

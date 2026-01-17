@@ -10,11 +10,138 @@ import Combine
 import RealityKit
 import SwiftUI
 
+@MainActor
+extension ImmersiveViewModel {
+
+    private func observeAppState() {
+
+        appState.$stickHandleLength
+            .removeDuplicates()
+            .sink { [weak self] newLength in
+                self?.updateStickLength(Double(newLength))
+            }
+            .store(in: &appStateCancellables)
+
+        appState.$drumScale
+            .removeDuplicates()
+            .sink { [weak self] scale in
+                self?.updateDrumScale(Double(scale))
+            }
+            .store(in: &appStateCancellables)
+
+        appState.$stickTipRadius
+            .removeDuplicates()
+            .sink { [weak self] newRadius in
+                self?.updateStickTipRadius(Double(newRadius))
+            }
+            .store(in: &appStateCancellables)
+
+        
+        appState.$drumDistance
+            .removeDuplicates()
+            .sink { [weak self] distance in
+                self?.updateDrumPosition()
+            }
+            .store(in: &appStateCancellables)
+
+        appState.$drumHeight
+            .removeDuplicates()
+            .sink { [weak self] height in
+                self?.updateDrumPosition()
+            }
+            .store(in: &appStateCancellables)
+    }
+    
+    private func updateDrumScale(_ scale: Double) {
+        let s = Float(scale)
+        drumRootEntity.scale = SIMD3<Float>(repeating: s)
+    }
+
+    private func updateDrumPosition() {
+        drumRootEntity.position = SIMD3<Float>(
+            Config.drumSetPosition.x,
+            Config.drumSetPosition.y + Float(appState.drumHeight),
+            Config.drumSetPosition.z + -1*Float(appState.drumDistance)
+        )
+    }
+    
+
+
+    private func updateStick(
+        _ stick: inout StickState?,
+        length: Float,
+        tipRadius: Float,
+        chirality: Chirality
+    ) {
+        guard var s = stick else { return }
+
+        s.stickEntity.children.removeAll()
+
+        let hand: AnchoringComponent.Target.Chirality = (chirality == .left) ? .left : .right
+
+        let tip = makeStickTip(chirality: hand, handleLength: length, tipRadius: tipRadius)
+        let handle = makeStickHandle(chirality: hand, handleLength: length)
+
+        s.stickEntity.addChild(tip)
+        s.stickEntity.addChild(handle)
+
+        // IMPORTANT: Promote updated collision shapes to the stick root
+        if let tipCollision = tip.components[CollisionComponent.self] {
+            s.stickEntity.components.set(
+                CollisionComponent(
+                    shapes: tipCollision.shapes,
+                    filter: tipCollision.filter
+                )
+            )
+        }
+
+        s.tipEntity = tip
+        stick = s
+    }
+
+    
+    
+
+    private func applyInitialLayoutFromAppState() {
+        updateDrumScale(Double(appState.drumScale))
+        updateDrumPosition()
+        updateStickLength(Double(appState.stickHandleLength))
+        updateStickTipRadius(Double(appState.stickTipRadius))
+    }
+    
+    private func updateStickTipRadius(_ radius: Double) {
+        // Rebuild using the current length + new radius
+        let length = Float(appState.stickHandleLength)
+        let r = Float(radius)
+
+        updateStick(&leftStick, length: length, tipRadius: r, chirality: .left)
+        updateStick(&rightStick, length: length, tipRadius: r, chirality: .right)
+
+        #if targetEnvironment(simulator)
+        updateStick(&simulatorStickState, length: length, tipRadius: r, chirality: .left)
+        #endif
+    }
+    
+    private func updateStickLength(_ length: Double) {
+        let l = Float(length)
+        let r = Float(appState.stickTipRadius)
+
+        updateStick(&leftStick, length: l, tipRadius: r, chirality: .left)
+        updateStick(&rightStick, length: l, tipRadius: r, chirality: .right)
+
+        #if targetEnvironment(simulator)
+        updateStick(&simulatorStickState, length: l, tipRadius: r, chirality: .left)
+        #endif
+    }
+
+
+
+}
 
 
 struct StickState {
     let stickEntity: Entity
-    let tipEntity: Entity
+    var tipEntity: Entity
     var lastTipPosition: SIMD3<Float>?
     var isInsideDrum: Bool = false  // Prevents multiple hits while inside the drum
 }
@@ -54,6 +181,9 @@ final class ImmersiveViewModel: ObservableObject {
     // Subscriptions and Tasks
     private var sceneUpdates: EventSubscription?
     private var handUpdates: Task<Void, Never>?
+    
+    private var appStateCancellables: Set<AnyCancellable> = []
+
 
     // Simulator
     #if targetEnvironment(simulator)
@@ -86,6 +216,10 @@ final class ImmersiveViewModel: ObservableObject {
         #endif
 
         setupUpdateLoop(content: content)
+        
+        observeAppState()
+        applyInitialLayoutFromAppState()
+
     }
 
     func onChangeControllerConnected(_ isConnected: Bool) {
@@ -121,6 +255,8 @@ final class ImmersiveViewModel: ObservableObject {
             appState.isHiHatClosed = isClosed
         }
     }
+    
+    
 
     func onChangeKickBeaterPosition(from previousDistance: Float, to distance: Float) {
         moveKickBeaterEntity(distance: distance)
@@ -397,8 +533,15 @@ extension ImmersiveViewModel {
 
     /// Creates a single stick and anchors it to the given hand.
     private func setupStick(chirality: AnchoringComponent.Target.Chirality, content: RealityViewContent) -> StickState {
-        let tip = makeStickTip(chirality: chirality)
-        let handle = makeStickHandle(chirality: chirality)
+        let tip = makeStickTip(
+            chirality: chirality,
+            handleLength: appState.stickHandleLength,
+            tipRadius: appState.stickTipRadius
+        )
+
+
+
+        let handle = makeStickHandle(chirality: chirality, handleLength: appState.stickHandleLength)
         let stick = Entity()
         stick.addChild(tip)
         stick.addChild(handle)
@@ -421,28 +564,34 @@ extension ImmersiveViewModel {
         return StickState(stickEntity: stick, tipEntity: tip)
     }
 
-    private func makeStickHandle(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
+    private func makeStickHandle(
+        chirality: AnchoringComponent.Target.Chirality,
+        handleLength: Float
+    ) -> ModelEntity {
         let mesh = MeshResource.generateCylinder(
-            height: Config.stickHandleLength,
+            height: handleLength,
             radius: Config.stickHandleRadius
         )
         let material = SimpleMaterial(color: .brown, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = Config.stickHandleLength / 2
+        model.position.y = handleLength / 2
         return model
     }
 
-    private func makeStickTip(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity{
-        let mesh = MeshResource.generateSphere(radius: Config.stickTipRadius)
+    private func makeStickTip(
+        chirality: AnchoringComponent.Target.Chirality,
+        handleLength: Float,
+        tipRadius: Float
+    ) -> ModelEntity {
+        let mesh = MeshResource.generateSphere(radius: tipRadius)
         let material = SimpleMaterial(color: .white, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = Config.stickHandleLength
+        model.position.y = handleLength
         model.scale.y = 1.2
 
         model.components.set(
             CollisionComponent(
-                shapes: [.generateSphere(radius: Config.stickTipRadius)],
-                // Only collides with entities in the "drum" collision group
+                shapes: [.generateSphere(radius: tipRadius)],
                 filter: .init(
                     group: chirality == .left ? .stickTipLeft : .stickTipRight,
                     mask: .drum
@@ -452,6 +601,8 @@ extension ImmersiveViewModel {
 
         return model
     }
+
+
 
     /// Positions and orients the stick to match a realistic hand grip, then anchors it to the user’s palm.
     private func positionStickInHand(stick: Entity, chirality: AnchoringComponent.Target.Chirality) -> AnchorEntity {
