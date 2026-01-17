@@ -22,7 +22,7 @@ class MIDIBridgeClient {
     var baseURL = Config.MIDIBaseURL
     
     /// Enable/disable bridge communication
-    var isEnabled = true
+    var isEnabled = false
     
     // MARK: - Public API
     
