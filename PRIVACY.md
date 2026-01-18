@@ -10,7 +10,6 @@ Verantwortlicher im Sinne der Datenschutzgesetze ist:
 
 **Oliver Kühle**
 E-Mail: [hello@oliverkuehle.de](mailto:hello@oliverkuehle.de)
-Telefon: +491709395496
 
 *Ein Datenschutzbeauftragter ist nicht bestellt, da die gesetzlichen Voraussetzungen hierfür nicht vorliegen.*
 
@@ -18,28 +17,29 @@ Telefon: +491709395496
 
 ### 3.1 Durch unsere App
 
-Die App **„Virtual Drums“** verarbeitet **keine personenbezogenen Daten auf externen Servern**. Alle Daten werden ausschließlich **lokal auf Ihrem Gerät** verarbeitet.
+Die App **„Virtual Drums“** verarbeitet **keine personenbezogenen Daten auf externen Servern**. Alle Daten werden ausschließlich **lokal auf Ihrem Gerät** verarbeitet, sofern Sie keine optionale MIDI Bridge aktivieren.
 
 Dabei können folgende Daten anfallen:
 
-* **App-interne Einstellungen**: Auswahl von Drum-Modellen und Sound-Kits
+* **App-interne Einstellungen**: Auswahl von Drum-Modellen, Sound-Kits und MIDI-Bridge-Einstellungen
 * **Audioausgabe**: Die erzeugten Drum-Sounds werden ausschließlich lokal über die Lautsprecher des Geräts ausgegeben
+* **Handtracking**: Positions- und Zustandsdaten Ihrer Hände werden in Echtzeit zur Interaktion verarbeitet, jedoch **nicht gespeichert oder übertragen**
+* **Game-Controller-Eingaben**: Eingaben für Fußpedale werden lokal verarbeitet
 
 Es werden **keine Audioaufnahmen gespeichert oder übertragen**.
 
 **Wichtiger Hinweis:**
 Alle Daten verbleiben vollständig auf Ihrem Gerät. Es findet keine Übertragung an uns oder an Dritte statt.
 
-### 3.2 Nicht erhobene Daten
+### 3.2 MIDI Bridge (optional)
 
-Wir erheben oder verarbeiten **keine** der folgenden Daten:
+Wenn Sie die **MIDI Bridge** aktivieren, sendet die App HTTP-Anfragen an die **von Ihnen eingetragene IP-Adresse** (z. B. ein Bridge-Server auf Ihrem Mac). Dabei werden ausschließlich folgende technische Daten übertragen:
 
-* Nutzungs- oder Tracking-Daten
-* Analyse- oder Analytics-Daten
-* Audio- oder Videoaufzeichnungen
-* Standortdaten
-* Gerätekennungen oder IP-Adressen
-* Kontaktdaten oder Identifikationsmerkmale
+* **Drum-Events** (z. B. „target_snare“)
+* **Anschlagsstärke** (Velocity, normalisiert 0–1)
+* **Kit-Auswahl** (Drum-Kit und Sound-Kit)
+
+Diese Daten dienen ausschließlich der Weiterleitung als MIDI an Ihre DAW (z. B. Logic Pro). Die Übertragung erfolgt **nur an die von Ihnen konfigurierte IP-Adresse** und **nicht an uns oder externe Server**.
 
 ### 3.3 Datenverarbeitung durch Apple
 
@@ -57,6 +57,8 @@ Die Datenverarbeitung dient ausschließlich:
 
 * Der **Bereitstellung der App-Funktionalitäten**
 * Der **lokalen Wiedergabe von Sounds**
+* Der **lokalen Interaktion per Handtracking und Game-Controller**
+* Der **optionalen MIDI-Übertragung** an die von Ihnen konfigurierte IP-Adresse
 * Der **Kommunikation**, wenn Sie uns aktiv kontaktieren
 
 ## 5. Rechtsgrundlage der Verarbeitung
@@ -71,28 +73,17 @@ Die Verarbeitung erfolgt auf Grundlage von:
 * **App-Daten & Einstellungen**: verbleiben lokal auf Ihrem Gerät, bis Sie diese löschen oder die App entfernen
 * **Support-Kommunikation**: E-Mails werden nach Abschluss des Anliegens gelöscht, spätestens nach 2 Jahren
 
-## 7. Weitergabe von Daten
+## 7. Weitergabe und Übertragung von Daten
 
-Es findet **keine Weitergabe** personenbezogener Daten an Dritte statt.
-Eine Weitergabe erfolgt nur, wenn wir gesetzlich dazu verpflichtet sind.
+Eine Weitergabe oder Übertragung von Daten an uns oder an Dritte findet **nicht statt**.
+Eine Übertragung findet **nur** statt, wenn Sie die MIDI Bridge aktivieren; in diesem Fall gehen die unter 3.2 genannten technischen Daten an die von Ihnen konfigurierte IP-Adresse.
 
-## 8. Datenübertragung in Drittländer
 
-Eine Übertragung von App-Daten in Drittländer findet **nicht statt**, da alle Daten lokal verarbeitet werden.
-
-Bei der Kontaktaufnahme per E-Mail kann eine Übertragung über die Server Ihres E-Mail-Anbieters erfolgen.
-
-## 9. Datensicherheit
+## 8. Datensicherheit
 
 Da alle Daten ausschließlich lokal gespeichert werden, unterliegen sie den Sicherheitsmechanismen Ihres visionOS-Geräts.
 
-Wir empfehlen:
-
-* Absicherung des Geräts durch Passcode oder Biometrie
-* Regelmäßige System-Updates
-* Nutzung der Gerätesperre bei Nichtgebrauch
-
-## 10. Ihre Rechte
+## 9. Ihre Rechte
 
 Sie haben gemäß DSGVO folgende Rechte:
 
@@ -107,7 +98,7 @@ Sie haben gemäß DSGVO folgende Rechte:
 **Hinweis:**
 Da alle App-Daten lokal gespeichert sind, können Sie diese direkt durch Löschen der App oder Zurücksetzen der Einstellungen entfernen.
 
-## 11. Beschwerderecht
+## 10. Beschwerderecht
 
 Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.
 
@@ -116,20 +107,19 @@ Bundesbeauftragte*r für den Datenschutz und die Informationsfreiheit
 Graurheindorfer Str. 153, 53117 Bonn
 [www.bfdi.bund.de](http://www.bfdi.bund.de)
 
-## 12. Hinweise für Minderjährige
+## 11. Hinweise für Minderjährige
 
 Die App ist für Nutzer ab **4 Jahren** geeignet.
 Bei Nutzern unter 16 Jahren ist die Einwilligung der Erziehungsberechtigten erforderlich.
 
-## 13. Änderungen der Datenschutzerklärung
+## 12. Änderungen der Datenschutzerklärung
 
 Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf anzupassen. Änderungen werden im Rahmen eines App-Updates bekannt gegeben.
 
-**Stand:** Dezember 2025
+**Stand:** Januar 2026
 
-## 14. Kontakt
+## 13. Kontakt
 
 Bei Fragen zum Datenschutz erreichen Sie uns unter:
 
 **E-Mail:** [hello@oliverkuehle.de](mailto:hello@oliverkuehle.de)
-**Telefon:** +491709395496
