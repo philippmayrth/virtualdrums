@@ -1,11 +1,94 @@
 # Virtual Drums
 
-A virtual DrumKit that runs on the Apple Vision Pro.
+A virtual drum kit for Apple Vision Pro.
 
-<img src="virtualdrums/assets/icon/Marketing FULL.png" width="300" height="300">
+<img src="virtualdrums/Assets/Icons/Version2/full_transparent.png" width="300" height="300">
 
-Im Projekt Virtual Drums haben wir uns die Frage gestellt, wie zukunftstauglich VR-Technologie tatsächlich ist. Als Plattform nutzen wir die Apple Vision Pro, programmiert mit Swift. Am besten lässt sich Technik evaluieren, indem man sie praktisch ausprobiert – daher haben wir ein virtuelles Drum Kit entwickelt. Inspiriert vom klassischen Instrument soll es die Möglichkeit bieten, mit der Apple Vision Pro Musik zu machen.
-Ein echtes Drum Kit zu ersetzen ist nicht Ziel dieses Projekts. Der eigentliche Mehrwert liegt darin, dass auch Musikerinnen und Musiker ohne Schlagzeugkenntnisse Beats für eigene Songs entwickeln können, ohne dabei auf die herkömmliche Drum-Sequenzer-Programmierung angewiesen zu sein.
+Im Projekt Virtual Drums haben wir uns die Frage gestellt, wie zukunftstauglich VR-Technologie tatsächlich ist. Als Plattform nutzen wir die Apple Vision Pro, programmiert mit Swift. Am besten lässt sich Technik evaluieren, indem man sie praktisch ausprobiert – daher haben wir ein virtuelles Drum Kit entwickelt. Inspiriert vom klassischen Instrument soll es die Möglichkeit bieten, mit der Apple Vision Pro Musik zu machen und dabei die Grenzen der Vision Pro und von visionOS 26 aufzeigen.
+
+---
+
+## 🥁 Highlights
+
+- Realistische, dynamische Schlag-Animationen
+- Anschlagstärke steuert Lautstärke und Klang
+- Mehrere Drum Sets und Sound Kits
+- Links-/Rechtshänder-Modus (Spiegelung)
+- Optional: MIDI-Ausgabe via Bridge für DAWs
+
+---
+
+## 🥁 App Versions (Git Tags)
+
+- **1.7**: New icon, Adjustment-View
+- **1.6**: *Version increased to resolve a submitted erroneous build*
+- **1.5**: MIDI Bridge, New Sounds, Refactoring, Usability improvements, Handedness Support
+- **1.4**: Tap gesture alternative for hi-hat pedal, Hand Grip Detection, Hi-Hat Cymbal & Kick Pedal move dynamically with controller trigger
+- **1.3**: GameController input for foot pedals
+- **1.2**: Keyboard input for foot pedals
+- **1.1**: Improved Version using Raycast Collision Detection
+- **1.0**: Working Version using CollisionEvents
+
+---
+
+## 🥁 External Software
+
+- **Blender** (3D modeling software, free) https://www.blender.org/
+- **Affinity (Designer)** (Design tool, freemium) https://www.affinity.studio
+
+---
+
+## 🥁 3D Drum Models
+
+Located in `virtualdrums/assets/drum sets`.
+
+- A **drum set model** is provided as a `.usdz` file and can be imported as an `Entity`.
+- Each `.usdz` file may contain multiple drum pieces, **each with its own separate mesh**.
+- Each drum piece that should trigger collisions with the stick must have its **mesh** be named : `target_[drum-piece-name]` (e.g. `target_hi_hat_top`).
+- When imported, every drum piece becomes a `ModelEntity`, which is then a child of the root `Entity`.
+
+The available drum sets are defined in `DrumSetID.swift`.
+Their modular drum pieces are defined in `DrumID.swift`.
+
+### Editing `.usdz` in Blender
+
+1. Import the `.usdz` file into Blender
+2. Edit as needed
+3. Click "Export as **Universal Scene Description (.usd*)**"
+4. Rename the exported file from `.usdc` to `.usdz` before exporting
+5. Export (easily check correctness using the Preview app)
+
+**Important: Axis Orientation**
+
+We compare the raycast hit normal (strike direction) with the UP vector of the drum piece.
+Therefore the drum face (piece that should be hit) must point up and the rotation must be preserved and to applied to or baked into the mesh.
+
+---
+
+## 🥁 Sounds
+
+Located in `virtualdrums/assets/soundkit`.
+
+- Files must be named: `[soundkit-name]_target_[drum-piece-name]` (e.g. `accoustic_target_hi_hat`)
+- Every soundkit must have a sound for each drum piece (see `DrumID.swift`).
+
+The available sounds kits are defined in `DrumKitID.swift`.
+
+---
+
+## 🥁 App Icon
+
+Located in `virtualdrums/assets/icon`
+
+### /Version 1
+
+There are two types. Prefixed with `App` are used inside of Xcode and prefixed with `Marketing` can be used on App Store Connect. There are @1 and @2 available for most.
+
+### /Version 2
+
+Contains the three components – *front, middle and back* – for creating the Icon in Xcode, as well a version – *full_transparent* – containing all layers, to be used on social media etc.
+
+---
 
 ## 🎹 NEW: MIDI Bridge Integration
 
@@ -52,108 +135,3 @@ VR App (Vision Pro) → HTTP → Python Bridge → MIDI → Logic Pro
 ```
 
 See [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md) for detailed diagrams.
-
----
-
-## App Versions (Git Tags)
-
-- **2.0**: MIDI Bridge integration - record drums in Logic Pro! 🎹
-- **1.4**: Tap gesture alternative for hi-hat pedal, Hand Grip Detection, Hi-Hat Cymbal & Kick Pedal move dynamically with controller trigger
-- **1.3**: GameController input for foot pedals
-- **1.2**: Keyboard input for foot pedals
-- **1.1**: Improved Version using Raycast Collision Detection
-- **1.0**: Working Version using CollisionEvents
-
-## Required Software
-
-This is a complex software, as such it requires a lot of specialized tools.
-
-### Blender
-
-3D modeling software, free.
-https://www.blender.org/
-
-### Affinity Designer
-
-Professional design tool. Used to create the app icon. Free version available.
-https://www.affinity.studio/en/graphic-design-software
-
-### Logic Pro
-
-Professional audio software, used for drum sounds. Free 90 day trial available.
-https://www.apple.com/de/logic-pro/
-
-### Exernal Project Files
-
-Files in the `external` dir require external software to open/edit. Those files are the source for the assets (audio, images, ...) used in the app.
-
-## App Icon
-
-Files for the app icon can be found in the `icon` dir. There are two types. Prefixed with `App` are used inside of Xcode and prefixed with `Marketing` can be used on App Store Connect. There are @1 and @2 available for most. The background icon for use in the app is exported as JPG not as PNG like all others, that is becuase XCode otherwise throws an error due to alpha channel being present in that image.
-
-## Drum Sets (3D Models)
-
-Located in `assets`.
-
-A **drum kit model** is provided as a `.usdz` file and can be imported as an `Entity`.
-Each `.usdz` file may contain multiple drum pieces, **each with its own separate mesh**.
-When imported, every drum piece becomes a `ModelEntity` that is a child of the root `Entity`.
-
-The available drum pieces are defined in `DrumController.swift` under `DrumID`.
-
-We currently have two drum sets with multiple modular drum pieces:
-
-* `burgundy_drum.usdz`
-  * [Burgundy Drum Kit by Opal 🥁](https://skfb.ly/oIXLv) (CC Attribution) (adjust for our needs in Blender)
-  1. target_snare
-  2. target_kick
-  3. target_floor_tom
-  4. target_mid_tom
-  5. target_high_tom
-  6. target_hi_hat
-  7. target_ride
-  8. ~~target_crash~~
-* `drum_kit.usdz`
-  * [Drum Kit](https://skfb.ly/6ZpKO) (CC Attribution) (adjust for our needs in Blender)
-  1. target_snare
-  2. target_kick
-  3. target_floor_tom
-  4. target_mid_tom
-  5. target_high_tom
-  6. target_hi_hat
-  7. target_ride
-  8. target_crash
-
-### Naming Convention
-
-Each drum piece **must** follow this naming format: `target-[drum-piece-name]`
-The prefix ensures we can validate the collision target and the drum piece suffix is to locate the correct sound.
-
-### Editing `.usdz` in Blender
-
-1. Import the `.usdz` file into Blender
-2. Edit as needed
-3. Export as **Universal Scene Description (.usd*)**
-4. Rename the exported file from `.usdc` to `.usdz`
-
-#### Important: Axis Orientation
-
-We compare the raycast hit normal (strike direction) with the UP vector of the drum piece.
-Therefore the drum face (piece that should be hit) must point up and the rotation must be preserved and to applied to or baked into the mesh.
-
-## Drum Sound Kits
-
-Located in `soundkit`.
-
-Files must be named: `[soundkit-name]_target_[drum-piece-name]`
-Example: `bite_target_hi_hat`
-
-* Currently we have 3 sound kits
-    * bite
-    * kick
-    * squeeze
-* Each sound kit currently contains 8 sounds
-* Every soundkit must have a sound for each drum piece.
-
-The drum kits are defined in `ContentView.swift` under `DrumKitID`.
-
