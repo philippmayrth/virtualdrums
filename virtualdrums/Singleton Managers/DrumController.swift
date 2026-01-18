@@ -27,6 +27,7 @@ class DrumController: ObservableObject {
         }
     }
 
+    /// Orchestrates the actions to be taken when a drum is hit.
     func onHit(drum: DrumID, velocity: Float? = nil) {
         let volume = calculateVolume(for: velocity)
         

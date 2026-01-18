@@ -57,6 +57,7 @@ final class ImmersiveViewModel: ObservableObject {
 
     func setup(content: RealityViewContent, appState: AppState) async {
         self.appState = appState
+
         drumSetup = DrumSetup(appState: appState)
         stickSetup = StickSetup(appState: appState)
 
@@ -113,7 +114,7 @@ final class ImmersiveViewModel: ObservableObject {
         let wasClosed = appState.isHiHatClosed
         let isClosed = distance == 0.0
 
-        // Trigger onHiHatClosed when pedal is pressed down
+        // Check for hi-hat chick hit (hi-hat was closed)
         if !wasClosed && isClosed {
             let hitWorldPosition = drumSetup.hiHatTopEntity!.position(relativeTo: nil)
             onDrumHit(
@@ -132,6 +133,7 @@ final class ImmersiveViewModel: ObservableObject {
     func onChangeKickBeaterPosition(from previousDistance: Float, to distance: Float) {
         drumSetup.moveKickBeaterEntity(distance: distance)
 
+        // Check for beater hitting the drum
         if distance == 0.0 && previousDistance != 0.0 {
             let hitWorldPosition = drumSetup.kickBeater!.position(relativeTo: nil)
             onDrumHit(
@@ -142,6 +144,9 @@ final class ImmersiveViewModel: ObservableObject {
         }
     }
     
+    /// Handles tap gestures directed at any entity
+    /// - Toggles hi-hat open/closed state when hi-hat is tapped
+    /// - In simulator mode, starts a stick sweep and triggers a drum hit if applicable
     func onTapGesture(value: EntityTargetValue<SpatialTapGesture.Value>) {
         let entity = value.entity
 
@@ -176,6 +181,8 @@ final class ImmersiveViewModel: ObservableObject {
 @MainActor
 extension ImmersiveViewModel {
     
+    /// Unified drum hit handler
+    /// Informs DrumController about which drum was hit and triggers visual feedback
     private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
         var resolvedDrumID = drumID
         if drumID == .target_hi_hat_top {
@@ -188,15 +195,23 @@ extension ImmersiveViewModel {
         drumController.onHit(drum: resolvedDrumID, velocity: velocity)
     }
 
+    /// Applies a short tilt animation (visual hit feedback) to the drum based on:
+    /// - Distance from the drum center
+    /// - Strike velocity
+    /// - Hi-hat pedal state (for hi-hat only)
     private func animateHit(entity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
+        // Retrieve the drum’s rest orientation so we can return to it after the hit.
         guard let restOrientation = drumSetup.restOrientation(for: entity) else {
             return
         }
 
+        // World-space center position of the drum
         let center = entity.position(relativeTo: nil)
+
+        // Vector from drum center to hit location (world space)
         let rawHitDir = hitWorldPosition - center
 
-        // Get the entity UP vector (direction of the drum surface)
+        // Extract the drum's surface normal (UP direction) from its transform.
         let transform = entity.transformMatrix(relativeTo: nil)
         let drumNormal = normalize(
             SIMD3<Float>(
@@ -206,28 +221,39 @@ extension ImmersiveViewModel {
             )
         )
 
-        // Hit direction → tilt axis
+        // Project the hit direction onto the drum surface plane.
         let hitDirInPlane = rawHitDir - dot(rawHitDir, drumNormal) * drumNormal
+
+        // If the hit is extremely close to the center, skip animation to avoid unstable axis calculations.
         guard simd_length_squared(hitDirInPlane) > 0.0001 else { return }
+
+        // Normalized direction of the hit along the drum surface
         let hitDir = normalize(hitDirInPlane)
+
+        // Compute a tilt axis perpendicular to both the drum normal and hit direction.
+        // This causes the drum to tilt *away* from the impact point.
         let worldTiltAxis = normalize(cross(drumNormal, hitDir))
+
+        // Convert the world-space axis into the drum’s local coordinate space
         let localTiltAxis = normalize(entity.convert(direction: worldTiltAxis, from: nil))
 
-        // Hit radius (distance from center)
+        // Distance from center to hit point (in-plane)
         let hitRadius = simd_length(hitDirInPlane)
 
-        // Tuned drum radius (world units)
+        // Approximate drum radius using visual bounds (world space)
         let bounds = entity.visualBounds(relativeTo: nil)
         let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
 
-        // Radius factor (0.0 - 1.0), influences tilt angle
+        // Normalize hit distance to a 0–1 range
+        // Center hits produce little tilt; edge hits produce more.
         let radiusFactor = min(hitRadius / radius, 1.0)
 
-        // strikeSpeed → angle
+        // Determine strike speed
         let rawSpeed = velocity ?? Config.defaultVelocity
         let clampedSpeed: Float = rawSpeed.clamped(to: 0.2...6.0)
 
-        // Hi-hat pedal dampening
+        // Optional dampening factor for hi-hat behavior.
+        // Closed hi-hat significantly reduces visible tilt.
         var hiHatFactor: Float? = nil
         if entity.name == DrumID.target_hi_hat_top.rawValue {
             hiHatFactor = appState.isHiHatClosed
@@ -235,10 +261,16 @@ extension ImmersiveViewModel {
                 : max(0.03, footPedalManager.hiHat.distance)
         }
 
+        // Final tilt angle:
+        // - Proportional to strike speed
+        // - Scaled by hit distance from center
+        // - Dampened for hi-hat pedal state (if applicable)
         let angle = clampedSpeed * 0.05 * radiusFactor * (hiHatFactor ?? 1.0)
 
+        // Construct a quaternion representing the tilt
         let tilt = simd_quatf(angle: angle, axis: localTiltAxis)
 
+        // First animation: quick tilt away from the hit
         entity.move(
             to: Transform(rotation: tilt * restOrientation),
             relativeTo: entity.parent,
@@ -246,6 +278,7 @@ extension ImmersiveViewModel {
             timingFunction: .easeOut
         )
 
+        // Second animation: smoothly return to rest orientation
         entity.move(
             to: Transform(rotation: restOrientation),
             relativeTo: entity.parent,
@@ -253,7 +286,6 @@ extension ImmersiveViewModel {
             timingFunction: .easeInOut
         )
     }
-
 }
 
 
@@ -279,6 +311,7 @@ extension ImmersiveViewModel {
         }
     }
 
+    /// Runs every frame to update stick visibility and process strikes
     private func update(deltaTime: Float) {
         updateStickVisibility()
 
@@ -297,6 +330,8 @@ extension ImmersiveViewModel {
         rightStick?.stickEntity.isEnabled = handGripManager.isRightHandGripping
     }
 
+    /// Process stick movement by raycasting from last to current tip position.
+    /// This avoids tunneling issues at high speeds.
     private func processStrike(stick: inout StickState?, deltaTime: Float) {
         guard var s = stick else { return }
         guard s.stickEntity.isEnabled else { return }  // only process if stick is visible (hand is gripping)
@@ -333,6 +368,8 @@ extension ImmersiveViewModel {
         stick = s
     }
 
+    /// Validates if raycast hit is a valid hit
+    /// Filter for top-surface hits only and gates multiple hits while stick is inside the drum.
     private func processRaycastHits(s: inout StickState, hits: [CollisionCastHit], strikeSpeed: Float) {
         if let hit = hits.first {
 
@@ -350,7 +387,7 @@ extension ImmersiveViewModel {
                 )
             )
 
-            // Checks if the strike was directed at the top drum surface (0.7 ≈ within 45° of up)
+            // Accept only top-surface hits (0.7 ≈ within 45° of up) and gate double hits while inside.
             let isTopHit = dot(hit.normal, entityUp) > Config.topHitThreshold
             if isTopHit && !s.isInsideDrum,
                 let drumId = DrumID(rawValue: hit.entity.name)

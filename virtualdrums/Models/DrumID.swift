@@ -3,6 +3,9 @@
 /// 
 /// DrumID is used across the entire system: RealityKit entities, AudioEngine sample routing, MIDI output, Input mapping (sticks, pedals, gestures), etc.
 /// Some IDs represent physical drums in the scene, while others represent specific sound variants (e.g. hi-hat open/closed).
+/// 
+/// ModelEntities with a name matching any of these will be set up to collide with drumsticks and trigger the corresponding sounds.
+/// When such an entity is hit, the DrumController will be notified with the resolved DrumID and the AudioEngine will play the according sound file.
 enum DrumID: String, CaseIterable {
     case target_snare
     case target_kick
