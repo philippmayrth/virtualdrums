@@ -33,9 +33,6 @@
 			exceptions = (
 				910055132EAA0EB700ABF163 /* Exceptions for "virtualdrums" folder in "virtualdrums" target */,
 			);
-			explicitFolders = (
-				assets/external,
-			);
 			path = virtualdrums;
 			sourceTree = "<group>";
 		};
