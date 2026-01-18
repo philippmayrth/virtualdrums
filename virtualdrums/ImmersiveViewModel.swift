@@ -10,11 +10,9 @@ import Combine
 import RealityKit
 import SwiftUI
 
-
-
 struct StickState {
     let stickEntity: Entity
-    let tipEntity: Entity
+    var tipEntity: Entity
     var lastTipPosition: SIMD3<Float>?
     var isInsideDrum: Bool = false  // Prevents multiple hits while inside the drum
 }
@@ -92,12 +90,29 @@ final class ImmersiveViewModel: ObservableObject {
         kickBeater?.isEnabled = isConnected
     }
 
-    func onChangeDrumSet(to drumSet: DrumSetID) {
-        Task { await replaceDrumSet(with: drumSet) }
+    func onChangeDrumSet() {
+        Task { await replaceDrumSet(with: appState.selectedDrumSet) }
     }
     
-    func onHandednessChanged(to handedness: Handedness) {
+    func onHandednessChanged() {
         Task { await replaceDrumSet(with: appState.selectedDrumSet) }
+    }
+    
+    func onStickLengthChanged() {
+        updateStickLength(&leftStick, chirality: .left)
+        updateStickLength(&rightStick, chirality: .right)
+    }
+    
+    func onDrumScaleChanged() {
+        drumRootEntity.scale = SIMD3<Float>(repeating: appState.drumScale)
+    }
+
+    func onDrumDistanceChanged() {
+        drumRootEntity.position.z = -(appState.drumDistance)
+    }
+    
+    func onDrumHeightChanged() {
+        drumRootEntity.position.y = appState.drumHeight
     }
 
     func onChangeHiHatTopPosition(to distance: Float) {
@@ -148,7 +163,7 @@ final class ImmersiveViewModel: ObservableObject {
         #if targetEnvironment(simulator)
             let location3D = value.location3D
             let localPosition = SIMD3<Float>(Float(location3D.x), Float(location3D.y), Float(location3D.z))
-            // TODO: calculate correct world position
+            // TODO: fix: calculate correct world position
             let worldPosition = resolveTapWorldPosition(entity: entity, location: localPosition)
             startSimulatorSweep(at: worldPosition)
             
@@ -169,6 +184,24 @@ final class ImmersiveViewModel: ObservableObject {
 @MainActor
 extension ImmersiveViewModel {
     
+    private func updateStickLength(_ stick: inout StickState?, chirality: AnchoringComponent.Target.Chirality) {
+        guard var s = stick else { return }
+
+        s.stickEntity.children.removeAll()            
+        let tip = makeStickTip(chirality: chirality)
+        let handle = makeStickHandle()
+        s.stickEntity.addChild(tip)
+        s.stickEntity.addChild(handle)
+        
+        // Promote updated collision shapes to the stick root
+        if let tipCollision = tip.components[CollisionComponent.self] {
+            s.stickEntity.components.set(CollisionComponent(shapes: tipCollision.shapes, filter: tipCollision.filter))
+        }
+
+        s.tipEntity = tip
+        stick = s
+    }
+
     /// Moves the kick beater towards/away from the drum face.
     /// The beater is not animated – therefore we can set the position directly.
     private func moveKickBeaterEntity(distance: Float) {
@@ -289,7 +322,7 @@ extension ImmersiveViewModel {
 
         do {
             let drumSetEntity = try await Entity(named: drumSet.rawValue, in: .main)
-            drumSetEntity.position = Config.drumSetPosition
+            drumSetEntity.position = Config.initialDrumSetPosition
             drumRootEntity.addChild(drumSetEntity)
 
             await setupTargetsRecursively(for: drumSetEntity)
@@ -376,7 +409,7 @@ extension ImmersiveViewModel {
                 CollisionComponent(
                     shapes: [shape],
                     filter: .init(
-                        group: .drum,
+                        group: [],
                         mask: []
                     )
                 )
@@ -402,7 +435,7 @@ extension ImmersiveViewModel {
     /// Creates a single stick and anchors it to the given hand.
     private func setupStick(chirality: AnchoringComponent.Target.Chirality, content: RealityViewContent) -> StickState {
         let tip = makeStickTip(chirality: chirality)
-        let handle = makeStickHandle(chirality: chirality)
+        let handle = makeStickHandle()
         let stick = Entity()
         stick.addChild(tip)
         stick.addChild(handle)
@@ -425,14 +458,14 @@ extension ImmersiveViewModel {
         return StickState(stickEntity: stick, tipEntity: tip)
     }
 
-    private func makeStickHandle(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity {
+    private func makeStickHandle() -> ModelEntity {
         let mesh = MeshResource.generateCylinder(
-            height: Config.stickHandleLength,
+            height: appState.stickHandleLength,
             radius: Config.stickHandleRadius
         )
         let material = SimpleMaterial(color: .brown, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = Config.stickHandleLength / 2
+        model.position.y = appState.stickHandleLength / 2.0
         return model
     }
 
@@ -440,7 +473,7 @@ extension ImmersiveViewModel {
         let mesh = MeshResource.generateSphere(radius: Config.stickTipRadius)
         let material = SimpleMaterial(color: .white, isMetallic: false)
         let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = Config.stickHandleLength
+        model.position.y = appState.stickHandleLength
         model.scale.y = 1.2
 
         model.components.set(

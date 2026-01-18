@@ -14,17 +14,35 @@ struct ImmersiveView: View {
         RealityView { content in
             await viewModel.setup(content: content, appState: appState)
         }
+        
+        // Gestures
         .gesture(
             SpatialTapGesture()
                 .targetedToAnyEntity()
                 .onEnded { value in viewModel.onTapGesture(value: value) }
         )
-        .onChange(of: appState.selectedDrumSet, { _, drumSet in
-            viewModel.onChangeDrumSet(to: drumSet)
+        
+        // App State
+        .onChange(of: appState.selectedDrumSet, { _, _ in
+            viewModel.onChangeDrumSet()
         })
-        .onChange(of: appState.handedness, {_, handedness in
-            viewModel.onHandednessChanged(to: handedness)
+        .onChange(of: appState.handedness, {_, _ in
+            viewModel.onHandednessChanged()
         })
+        .onChange(of: appState.stickHandleLength, {_, _ in
+            viewModel.onStickLengthChanged()
+        })
+        .onChange(of: appState.drumScale, {_, _ in
+            viewModel.onDrumScaleChanged()
+        })
+        .onChange(of: appState.drumDistance, {_, _ in
+            viewModel.onDrumDistanceChanged()
+        })
+        .onChange(of: appState.drumHeight, {_, _ in
+            viewModel.onDrumHeightChanged()
+        })
+
+        // Foot Pedal Manager
         .onChange(of: footPedalManager.hiHat.distance, {_, newDistance in
             viewModel.onChangeHiHatTopPosition(to: newDistance)
         })
@@ -34,17 +52,19 @@ struct ImmersiveView: View {
         .onChange(of: footPedalManager.isControllerConnected, {_, isConnected in
             viewModel.onChangeControllerConnected(isConnected)
         })
+
+        // Debugging
         #if targetEnvironment(simulator)
-        .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
-            let delta = appState.simulator.simulatorStickMoveDelta
-            viewModel.moveSimulatorStick(dx: delta.x, dy: delta.y, dz: delta.z)
-        })
-        .onChange(of: appState.simulator.simulatorStickResetToken, { _, _ in
-            viewModel.resetSimulatorStick()
-        })
-        .onChange(of: appState.simulator.simulatorStickSweepToken, { _, _ in
-            viewModel.startSimulatorSweep(at: viewModel.simulatorStickPosition)
-        })
+            .onChange(of: appState.simulator.simulatorStickMoveToken, { _, _ in
+                let delta = appState.simulator.simulatorStickMoveDelta
+                viewModel.moveSimulatorStick(dx: delta.x, dy: delta.y, dz: delta.z)
+            })
+            .onChange(of: appState.simulator.simulatorStickResetToken, { _, _ in
+                viewModel.resetSimulatorStick()
+            })
+            .onChange(of: appState.simulator.simulatorStickSweepToken, { _, _ in
+                viewModel.startSimulatorSweep(at: viewModel.simulatorStickPosition)
+            })
         #endif // targetEnvironment(simulator)
     }
 }

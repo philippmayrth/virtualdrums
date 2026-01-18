@@ -83,7 +83,7 @@ struct DrumKitView: View {
 /// Reusable drum kit button component
 private struct DrumKitButton: View {
     let kit: DrumKit
-    let appState: AppState
+    @ObservedObject var appState: AppState    
     let openImmersiveSpace: OpenImmersiveSpaceAction
     
     var body: some View {

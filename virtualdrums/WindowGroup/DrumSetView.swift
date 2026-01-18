@@ -28,13 +28,38 @@ private struct DrumSet: Identifiable {
 }
 
 struct DrumSetView: View {
+    @EnvironmentObject private var appState: AppState
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
-    @EnvironmentObject var appState: AppState
+    @State private var isAdjusting: Bool = false
 
+    var body: some View {
+        Group() {
+            if isAdjusting {
+                AdjustmentView(
+                    appState: appState,
+                    isAdjusting: $isAdjusting
+                )
+            } else {
+                DrumSetSelection(
+                    appState: appState,
+                    openImmersiveSpace: openImmersiveSpace,
+                    isAdjusting: $isAdjusting
+                )
+            }
+        }
+        .padding(60)
+    }
+}
+
+private struct DrumSetSelection: View {
+    @ObservedObject var appState: AppState
+    let openImmersiveSpace: OpenImmersiveSpaceAction
+    @Binding var isAdjusting: Bool
+    
     private func isSelected(_ drumSetID: DrumSetID) -> Bool {
         return appState.selectedDrumSet == drumSetID && appState.isImmersiveSpaceOpen
     }
-    
+
     var body: some View {
         VStack(spacing: 30) {
             
@@ -50,17 +75,6 @@ struct DrumSetView: View {
             }
             
             VStack(spacing: 8) {
-                // Handedness selection
-                Picker("Handedness", selection: $appState.handedness) {
-                    ForEach(Handedness.allCases, id: \.self) { handedness in
-                        Text(handedness.rawValue).tag(handedness)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .font(.callout)
-                .frame(maxWidth: 300)
-                .opacity(0.8)
-
                 // Drum set selection buttons
                 ForEach(DrumSet.all) { set in
                     if isSelected(set.id) {
@@ -80,15 +94,23 @@ struct DrumSetView: View {
                     }
                 }
             }
+         
+            Button(action: {
+                isAdjusting = true
+            }) {
+                Label("Adjust", systemImage: "pencil")
+            }
+            .disabled(!appState.isImmersiveSpaceOpen)
+            .opacity(appState.isImmersiveSpaceOpen ? 1 : 0)
+            
         }
-        .padding(60)
     }
 }
 
 //// Reusable drum set button component
 private struct DrumSetButton: View {
     let set: DrumSet
-    let appState: AppState
+    @ObservedObject var appState: AppState
     let openImmersiveSpace: OpenImmersiveSpaceAction
     
     var body: some View {
@@ -115,10 +137,4 @@ private struct DrumSetButton: View {
             }
         }
     }
-}
-
-
-#Preview(windowStyle: .automatic) {
-    DrumKitView()
-        .environmentObject(AppState())
 }

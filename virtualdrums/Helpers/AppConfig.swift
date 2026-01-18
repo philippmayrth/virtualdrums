@@ -13,7 +13,7 @@ enum Config {
 
     
     // Immersive Space
-    static let drumSetPosition: SIMD3<Float> = [0, 0.15, -0.6]
+    static let initialDrumSetPosition: SIMD3<Float> = [0, 0.15, -0.6]
 
     // Audio
     static let defaultMaxPolyphony: Int = 8
@@ -30,7 +30,7 @@ enum Config {
 
 
     // Drum Stick
-    static let stickHandleLength: Float = 0.25
+    static let initialStickHandleLength: Float = 0.3
     static let stickHandleRadius: Float = 0.004
     static let stickTipRadius: Float = 0.005
 
