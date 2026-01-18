@@ -37,3 +37,15 @@ In the Virtual Drums project, we explore how future-ready VR technology really i
 
 - **Blender** (3D modeling software, free) https://www.blender.org/
 - **Affinity (Designer)** (Design tool, freemium) https://www.affinity.studio
+
+## 🥁 Next Steps
+
+- Extend raycast to use a sphere sweep (tip radius) instead of a line
+- Improve immersion by using high-poly drum stick models
+- Evaluate effectiveness of using PSVR2 Controllers
+- Evaluate effectiveness of using [object tracking](https://developer.apple.com/documentation/visionos/implementing-object-tracking-in-your-visionos-app) to track physical drum sticks. Might reduce latency, enhance immersion and provide physical feedback
+- Reduce latency
+- Improve physical pedals (3D-printed controller-adapters vs. microcontrollers with sensors)
+- Add a quick/automatic calibration flow for drum distance, height, and stick length
+- Improve MIDI Bridge UX (User manual, OSC instead of HTTP server, automatic IP-address discovery, macOS app instead of Python script)
+- Add 360° full-immersive environments (concert, audience, music-studio etc.)
