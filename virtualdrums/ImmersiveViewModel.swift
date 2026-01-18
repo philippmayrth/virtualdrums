@@ -26,20 +26,8 @@ final class ImmersiveViewModel: ObservableObject {
     let footPedalManager = FootPedalManager.shared
     let handGripManager = HandGripManager.shared
 
-    // Scene root for drum entities
-    private let drumRootEntity = Entity()
-
-    // Hi-hat
-    private var hiHatTopEntity: ModelEntity?
-    private var hiHatTopParentRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
-
-    // Kick
-    private var kickDrumEntity: ModelEntity?  // store to skip lookup
-    private var kickBeater: ModelEntity?
-    private var kickBeaterRestPosition: SIMD3<Float> = .zero  // refactor to ModelEntity extension
-
-    // Drum rest rotations
-    private var drumRestOrientations: [Entity.ID: simd_quatf] = [:]  // refactor to ModelEntity extension
+    private var drumSetup: DrumSetup!
+    private var stickSetup: StickSetup!
 
     // Sticks
     private var leftStick: StickState?
@@ -69,17 +57,21 @@ final class ImmersiveViewModel: ObservableObject {
 
     func setup(content: RealityViewContent, appState: AppState) async {
         self.appState = appState
+        drumSetup = DrumSetup(appState: appState)
+        stickSetup = StickSetup(appState: appState)
 
-        content.add(drumRootEntity)
+        content.add(drumSetup.drumRootEntity)
 
-        await replaceDrumSet(with: appState.selectedDrumSet)
+        await drumSetup.replaceDrumSet(with: appState.selectedDrumSet)
 
         #if targetEnvironment(simulator)
             await setupSimulatorStick(content: content)
         #endif
 
         #if !targetEnvironment(simulator)
-            await setupDrumSticks(content: content)
+            let sticks = stickSetup.setupDrumSticks(content: content)
+            leftStick = sticks.left
+            rightStick = sticks.right
             await setupHandTracking()
         #endif
 
@@ -87,46 +79,46 @@ final class ImmersiveViewModel: ObservableObject {
     }
 
     func onChangeControllerConnected(_ isConnected: Bool) {
-        kickBeater?.isEnabled = isConnected
+        drumSetup.kickBeater?.isEnabled = isConnected
     }
 
     func onChangeDrumSet() {
-        Task { await replaceDrumSet(with: appState.selectedDrumSet) }
+        Task { await drumSetup.replaceDrumSet(with: appState.selectedDrumSet) }
     }
     
     func onHandednessChanged() {
-        Task { await replaceDrumSet(with: appState.selectedDrumSet) }
+        Task { await drumSetup.replaceDrumSet(with: appState.selectedDrumSet) }
     }
     
     func onStickLengthChanged() {
-        updateStickLength(&leftStick, chirality: .left)
-        updateStickLength(&rightStick, chirality: .right)
+        stickSetup.updateStickLength(&leftStick, chirality: .left)
+        stickSetup.updateStickLength(&rightStick, chirality: .right)
     }
     
     func onDrumScaleChanged() {
-        drumRootEntity.scale = SIMD3<Float>(repeating: appState.drumScale)
+        drumSetup.drumRootEntity.scale = SIMD3<Float>(repeating: appState.drumScale)
     }
 
     func onDrumDistanceChanged() {
-        drumRootEntity.position.z = -(appState.drumDistance)
+        drumSetup.drumRootEntity.position.z = -(appState.drumDistance)
     }
     
     func onDrumHeightChanged() {
-        drumRootEntity.position.y = appState.drumHeight
+        drumSetup.drumRootEntity.position.y = appState.drumHeight
     }
 
     func onChangeHiHatTopPosition(to distance: Float) {
-        moveHiHatTopEntity(distance: distance)
+        drumSetup.moveHiHatTopEntity(distance: distance)
 
         let wasClosed = appState.isHiHatClosed
         let isClosed = distance == 0.0
 
         // Trigger onHiHatClosed when pedal is pressed down
         if !wasClosed && isClosed {
-            let hitWorldPosition = hiHatTopEntity!.position(relativeTo: nil)
+            let hitWorldPosition = drumSetup.hiHatTopEntity!.position(relativeTo: nil)
             onDrumHit(
                 drumID: .target_hi_hat_chick,
-                drumEntity: hiHatTopEntity!,
+                drumEntity: drumSetup.hiHatTopEntity!,
                 hitWorldPosition: hitWorldPosition
             )
         }
@@ -138,13 +130,13 @@ final class ImmersiveViewModel: ObservableObject {
     }
 
     func onChangeKickBeaterPosition(from previousDistance: Float, to distance: Float) {
-        moveKickBeaterEntity(distance: distance)
+        drumSetup.moveKickBeaterEntity(distance: distance)
 
         if distance == 0.0 && previousDistance != 0.0 {
-            let hitWorldPosition = kickBeater!.position(relativeTo: nil)
+            let hitWorldPosition = drumSetup.kickBeater!.position(relativeTo: nil)
             onDrumHit(
                 drumID: .target_kick,
-                drumEntity: kickDrumEntity!,
+                drumEntity: drumSetup.kickDrumEntity!,
                 hitWorldPosition: hitWorldPosition
             )
         }
@@ -184,53 +176,6 @@ final class ImmersiveViewModel: ObservableObject {
 @MainActor
 extension ImmersiveViewModel {
     
-    private func updateStickLength(_ stick: inout StickState?, chirality: AnchoringComponent.Target.Chirality) {
-        guard var s = stick else { return }
-
-        s.stickEntity.children.removeAll()            
-        let tip = makeStickTip(chirality: chirality)
-        let handle = makeStickHandle()
-        s.stickEntity.addChild(tip)
-        s.stickEntity.addChild(handle)
-        
-        // Promote updated collision shapes to the stick root
-        if let tipCollision = tip.components[CollisionComponent.self] {
-            s.stickEntity.components.set(CollisionComponent(shapes: tipCollision.shapes, filter: tipCollision.filter))
-        }
-
-        s.tipEntity = tip
-        stick = s
-    }
-
-    /// Moves the kick beater towards/away from the drum face.
-    /// The beater is not animated – therefore we can set the position directly.
-    private func moveKickBeaterEntity(distance: Float) {
-        guard let beater = kickBeater else { return }
-        let beaterWidth = beater.visualBounds(relativeTo: beater.parent).extents.x
-        let maxOffSet = beaterWidth * 2.0
-        let offset = SIMD3<Float>(0, -(distance * maxOffSet), 0) // towards the user, away from the drum face
-        kickBeater?.position = kickBeaterRestPosition + offset
-    }
-
-    /// Opens and closes the hi-hat by translating its parent instead of the cymbal itself.
-    ///
-    /// The cymbal uses `move()` for the hit “wiggle” animation. Changing its transform
-    /// directly for pedal movement would interrupt that animation and leave it tilted.
-    /// Moving the parent lets the pedal motion and hit animation coexist safely.
-    private func moveHiHatTopEntity(distance: Float) {
-        guard
-            let hiHat = hiHatTopEntity,
-            let parent = hiHat.parent
-        else { return }
-                
-        let bounds = hiHat.visualBounds(relativeTo: nil)
-        let radius = max(bounds.extents.x, bounds.extents.z) * 0.5
-        let maxOffset = radius * 0.25
-        
-        let offset = SIMD3<Float>(0, 0, distance * maxOffset) // upwards, away from hi-hat bottom
-        parent.position = hiHatTopParentRestPosition + offset
-    }
-    
     private func onDrumHit(drumID: DrumID, drumEntity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
         var resolvedDrumID = drumID
         if drumID == .target_hi_hat_top {
@@ -244,7 +189,7 @@ extension ImmersiveViewModel {
     }
 
     private func animateHit(entity: Entity, hitWorldPosition: SIMD3<Float>, velocity: Float? = nil) {
-        guard let restOrientation = drumRestOrientations[entity.id] else {
+        guard let restOrientation = drumSetup.restOrientation(for: entity) else {
             return
         }
 
@@ -311,207 +256,6 @@ extension ImmersiveViewModel {
 
 }
 
-// MARK: - Scene setup (drums)
-
-@MainActor
-extension ImmersiveViewModel {
-
-    private func replaceDrumSet(with drumSet: DrumSetID) async {
-        // Remove all existing drums from root (simple & robust)
-        drumRootEntity.children.removeAll()
-
-        do {
-            let drumSetEntity = try await Entity(named: drumSet.rawValue, in: .main)
-            drumSetEntity.position = Config.initialDrumSetPosition
-            drumRootEntity.addChild(drumSetEntity)
-
-            await setupTargetsRecursively(for: drumSetEntity)
-        } catch {
-            print("❌ Failed to load drum set model:", error)
-        }
-    }
-
-    private func setupTargetsRecursively(for entity: Entity) async {
-        for child in entity.children {
-            if let model = child as? ModelEntity {  // must be a ModelEntity (→ has a mesh)
-
-                if appState.handedness == .left {
-                    entity.applyLeftHandednessMirror()
-                }
-                
-                if let drumID = DrumID(rawValue: model.name) {  // must be a recognized drum (→ named "target_[drum_piece]")
-                    await setupDrumTarget(entity: model, drumID: drumID)
-                }
-
-                switch model.name {
-                case DrumID.target_hi_hat_top.rawValue: setupHiHatTop(entity: model)
-                case DrumID.target_kick.rawValue: setupKickDrum(entity: model)
-                case "kick_beater": setupKickBeater(entity: model)
-                case "hi_hat_bottom": await setupHiHatBottom(entity: model)
-                default: break
-                }
-            }
-            await setupTargetsRecursively(for: child)  // recurse into grandchildren, etc.
-        }
-    }
-
-    private func setupDrumTarget(entity: ModelEntity, drumID: DrumID) async {
-        do {
-            let shape = try await ShapeResource.generateConvex(from: entity.model!.mesh)
-            entity.components.set(
-                CollisionComponent(
-                    shapes: [shape],
-                    filter: .init(
-                        group: .drum,
-                        mask: .stickTipLeft.union(.stickTipRight)
-                    )
-                )
-            )
-        } catch {
-            print("⚠️ Could not generate collider for:", entity.name, error)
-        }
-
-        drumRestOrientations[entity.id] = entity.orientation
-
-        #if targetEnvironment(simulator)
-            entity.components.set(InputTargetComponent())
-        #endif
-
-        // Load sound etc.
-        drumController.onDrumLoaded(drumID)
-    }
-
-    private func setupKickDrum(entity: ModelEntity) {
-        kickDrumEntity = entity
-    }
-
-    private func setupKickBeater(entity: ModelEntity) {
-        kickBeater = entity
-        kickBeaterRestPosition = entity.position
-
-        kickBeater?.isEnabled = footPedalManager.isControllerConnected
-        moveKickBeaterEntity(distance: footPedalManager.kick.distance)
-    }
-    
-    private func setupHiHatTop(entity: ModelEntity) {
-        hiHatTopEntity = entity
-        hiHatTopParentRestPosition = entity.parent!.position
-
-        entity.components.set(InputTargetComponent())
-
-        moveHiHatTopEntity(distance: appState.isHiHatClosed ? 0.0 : 1.0)
-    }
-
-    private func setupHiHatBottom(entity: ModelEntity) async {
-        do {
-            let shape = try await ShapeResource.generateConvex(from: entity.model!.mesh)
-            entity.components.set(
-                CollisionComponent(
-                    shapes: [shape],
-                    filter: .init(
-                        group: [],
-                        mask: []
-                    )
-                )
-            )
-        } catch {
-            print("⚠️ Could not generate collider for:", entity.name, error)
-        }                                        
-        
-        entity.components.set(InputTargetComponent())
-    }
-}
-
-// MARK: - Scene setup (sticks)
-
-@MainActor
-extension ImmersiveViewModel {
-
-    private func setupDrumSticks(content: RealityViewContent) async {
-        self.leftStick = setupStick(chirality: .left, content: content)
-        self.rightStick = setupStick(chirality: .right, content: content)
-    }
-
-    /// Creates a single stick and anchors it to the given hand.
-    private func setupStick(chirality: AnchoringComponent.Target.Chirality, content: RealityViewContent) -> StickState {
-        let tip = makeStickTip(chirality: chirality)
-        let handle = makeStickHandle()
-        let stick = Entity()
-        stick.addChild(tip)
-        stick.addChild(handle)
-
-        // Needed for Collision Detection and Raycasting.
-        // This also propagates to child entities that contain meshes.
-        stick.components.set(InputTargetComponent())
-
-        // Promote the tip’s collision configuration to the root stick entity
-        stick.components.set(
-            CollisionComponent(
-                shapes: tip.collision!.shapes,
-                filter: tip.collision!.filter
-            )
-        )
-
-        let anchor: AnchorEntity = positionStickInHand(stick: stick, chirality: chirality)
-        content.add(anchor)
-
-        return StickState(stickEntity: stick, tipEntity: tip)
-    }
-
-    private func makeStickHandle() -> ModelEntity {
-        let mesh = MeshResource.generateCylinder(
-            height: appState.stickHandleLength,
-            radius: Config.stickHandleRadius
-        )
-        let material = SimpleMaterial(color: .brown, isMetallic: false)
-        let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = appState.stickHandleLength / 2.0
-        return model
-    }
-
-    private func makeStickTip(chirality: AnchoringComponent.Target.Chirality) -> ModelEntity{
-        let mesh = MeshResource.generateSphere(radius: Config.stickTipRadius)
-        let material = SimpleMaterial(color: .white, isMetallic: false)
-        let model = ModelEntity(mesh: mesh, materials: [material])
-        model.position.y = appState.stickHandleLength
-        model.scale.y = 1.2
-
-        model.components.set(
-            CollisionComponent(
-                shapes: [.generateSphere(radius: Config.stickTipRadius)],
-                // Only collides with entities in the "drum" collision group
-                filter: .init(
-                    group: chirality == .left ? .stickTipLeft : .stickTipRight,
-                    mask: .drum
-                )
-            )
-        )
-
-        return model
-    }
-
-    /// Positions and orients the stick to match a realistic hand grip, then anchors it to the user’s palm.
-    private func positionStickInHand(stick: Entity, chirality: AnchoringComponent.Target.Chirality) -> AnchorEntity {
-        stick.position = [0, 0.025, -0.015]  // Offset to approximate how a real drum stick is held
-        let rotationX = simd_quatf(angle: -.pi / 2, axis: [1, 0, 0])
-        let rotationZSign: Float = (chirality == .left) ? -1 : 1  // Mirror for left hand
-        let rotationZ = simd_quatf(angle: rotationZSign * .pi / 2.2, axis: [0, 0, 1])
-        stick.orientation = rotationX * rotationZ
-
-        let anchor = AnchorEntity(
-            .hand(chirality, location: .palm),
-            trackingMode: .continuous,
-            // !
-            // Hand anchors use a separate physics simulation by default.
-            // Disabling it ensures collisions are detected with entities anchored elsewhere (e.g., the drums).
-            physicsSimulation: .none
-        )
-
-        anchor.addChild(stick)
-        return anchor
-    }
-
-}
 
 // MARK: - Hand tracking + Update loops
 
