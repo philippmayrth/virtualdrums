@@ -6,6 +6,8 @@ A virtual drum kit for Apple Vision Pro.
 
 In the Virtual Drums project, we explore how future-ready VR technology really is. The app targets Apple Vision Pro and is built in Swift. The best way to evaluate new tech is hands-on—so we built a virtual drum kit. Inspired by the classic instrument, it lets you make music on Vision Pro while highlighting the boundaries of visionOS 26.
 
+You can test it out for yourself in the [App Store](https://apps.apple.com/de/app/virtual-drums/id6756814388).
+
 ## 🥁 Documentation
 
 - [DEVELOPERS.md](./DEVELOPERS.md) → Setup & onboarding
